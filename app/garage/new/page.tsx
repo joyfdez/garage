@@ -1,8 +1,18 @@
-export default function AddCarPage() {
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { AddCarForm } from "@/components/AddCarForm";
+
+export default async function AddCarPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
   return (
-    <div className="px-4 py-6">
-      <h1 className="font-display text-2xl font-bold">Add a Car</h1>
-      <p className="mt-2 text-ink/50 text-sm">Coming in Phase 4.</p>
+    <div className="px-4 py-6 max-w-lg">
+      <h1 className="font-display text-2xl font-bold mb-6">Add a car</h1>
+      <AddCarForm userId={user.id} />
     </div>
   );
 }

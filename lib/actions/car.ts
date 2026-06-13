@@ -1,0 +1,353 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+
+export type CarState = { error: string } | null;
+
+function toSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function randomSuffix(): string {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+export async function createCar(
+  _prev: CarState,
+  formData: FormData
+): Promise<CarState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const modelId = (formData.get("model_id") as string) || null;
+  const customMake = (formData.get("custom_make") as string)?.trim() || null;
+  const customModel = (formData.get("custom_model") as string)?.trim() || null;
+  const customGeneration = (formData.get("custom_generation") as string)?.trim() || null;
+  const displayMake = (formData.get("display_make") as string)?.trim() ?? "";
+  const displayModel = (formData.get("display_model") as string)?.trim() ?? "";
+
+  const rawYear = parseInt(formData.get("year") as string, 10);
+  if (isNaN(rawYear) || rawYear < 1885 || rawYear > new Date().getFullYear() + 2) {
+    return { error: "Enter a valid year." };
+  }
+
+  const engine = (formData.get("engine") as string)?.trim() || null;
+  const transmission = (formData.get("transmission") as string)?.trim() || null;
+  const color = (formData.get("color") as string)?.trim() || null;
+  const nickname = (formData.get("nickname") as string)?.trim() || null;
+  const location = (formData.get("location") as string)?.trim() || null;
+  const visibility = (formData.get("visibility") as string) === "private" ? "private" : "public";
+  const vin = (formData.get("vin") as string)?.trim() || null;
+
+  if (!modelId && (!customMake || !customModel)) {
+    return { error: "Select a car model or fill in make and model." };
+  }
+
+  const slugBase = toSlug(`${rawYear} ${displayMake} ${displayModel}`);
+  const slug = `${slugBase}-${randomSuffix()}`;
+
+  // Collect photo paths from hidden form inputs
+  const coverPhotoPath = (formData.get("cover_photo_path") as string) || null;
+  const extraPhotoPaths: string[] = [];
+  for (let i = 1; ; i++) {
+    const p = formData.get(`photo_path_${i}`) as string | null;
+    if (!p) break;
+    extraPhotoPaths.push(p);
+  }
+
+  const { data: car, error: carError } = await supabase
+    .from("cars")
+    .insert({
+      slug,
+      current_owner_id: user.id,
+      model_id: modelId,
+      custom_make: customMake,
+      custom_model: customModel,
+      custom_generation: customGeneration,
+      year: rawYear,
+      engine,
+      transmission,
+      color,
+      nickname,
+      location,
+      visibility,
+      cover_photo_path: coverPhotoPath,
+    })
+    .select("id, slug")
+    .single();
+
+  if (carError) {
+    return { error: "Something went wrong saving your car. Please try again." };
+  }
+
+  const purchaseDate = (formData.get("purchase_date") as string)?.trim() || null;
+  const purchasePriceRaw = (formData.get("purchase_price") as string)?.trim();
+  const purchasePrice = purchasePriceRaw ? parseFloat(purchasePriceRaw) : null;
+  const purchasePricePublic = formData.get("purchase_price_public") === "true";
+  const currency = (formData.get("currency") as string)?.trim() || "EUR";
+
+  await supabase.from("ownerships").insert({
+    car_id: car.id,
+    user_id: user.id,
+    start_date: purchaseDate,
+    purchase_price: purchasePrice,
+    purchase_price_public: purchasePricePublic,
+    currency,
+  });
+
+  if (vin) {
+    await supabase.from("car_vins").insert({ car_id: car.id, vin });
+  }
+
+  // Insert photo rows ([cover, ...extras])
+  const allPaths = [coverPhotoPath, ...extraPhotoPaths].filter(Boolean) as string[];
+  if (allPaths.length > 0) {
+    await supabase.from("photos").insert(
+      allPaths.map((storage_path, position) => ({
+        car_id: car.id,
+        storage_path,
+        position,
+      }))
+    );
+  }
+
+  redirect(`/car/${car.slug}`);
+}
+
+export async function updateCar(
+  _prev: CarState,
+  formData: FormData
+): Promise<CarState> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const carId = formData.get("car_id") as string;
+  const { data: existing } = await supabase
+    .from("cars")
+    .select("slug, model_id")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!existing) return { error: "Car not found." };
+
+  const rawYear = parseInt(formData.get("year") as string, 10);
+  if (isNaN(rawYear) || rawYear < 1885 || rawYear > new Date().getFullYear() + 2) {
+    return { error: "Enter a valid year." };
+  }
+
+  const updates: Record<string, unknown> = {
+    year: rawYear,
+    engine: (formData.get("engine") as string)?.trim() || null,
+    transmission: (formData.get("transmission") as string)?.trim() || null,
+    color: (formData.get("color") as string)?.trim() || null,
+    nickname: (formData.get("nickname") as string)?.trim() || null,
+    location: (formData.get("location") as string)?.trim() || null,
+    visibility: (formData.get("visibility") as string) === "private" ? "private" : "public",
+  };
+
+  if (!existing.model_id) {
+    const customMake = (formData.get("custom_make") as string)?.trim() || null;
+    const customModel = (formData.get("custom_model") as string)?.trim() || null;
+    if (!customMake || !customModel) return { error: "Make and model are required." };
+    updates.custom_make = customMake;
+    updates.custom_model = customModel;
+    updates.custom_generation = (formData.get("custom_generation") as string)?.trim() || null;
+  }
+
+  const { error } = await supabase.from("cars").update(updates).eq("id", carId);
+  if (error) return { error: "Failed to save changes. Please try again." };
+
+  redirect(`/car/${existing.slug}`);
+}
+
+export async function setCarCover(
+  carId: string,
+  storagePath: string | null
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Not authenticated";
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return "Car not found";
+
+  const { error } = await supabase
+    .from("cars")
+    .update({ cover_photo_path: storagePath })
+    .eq("id", carId);
+
+  if (error) return "Failed to update cover";
+  revalidatePath(`/car/${car.slug}`);
+  return null;
+}
+
+export async function deleteCarPhoto(
+  photoId: string,
+  storagePath: string,
+  carId: string
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Not authenticated";
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug, cover_photo_path")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return "Car not found";
+
+  await supabase.storage.from("car-photos").remove([storagePath]);
+
+  const { error } = await supabase.from("photos").delete().eq("id", photoId);
+  if (error) return "Failed to delete photo";
+
+  if (car.cover_photo_path === storagePath) {
+    await supabase.from("cars").update({ cover_photo_path: null }).eq("id", carId);
+  }
+
+  revalidatePath(`/car/${car.slug}`);
+  return null;
+}
+
+export async function markAsSold(
+  _prev: CarState,
+  formData: FormData
+): Promise<CarState> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const carId = formData.get("car_id") as string;
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return { error: "Car not found." };
+
+  const { data: ownership } = await supabase
+    .from("ownerships")
+    .select("id")
+    .eq("car_id", carId)
+    .eq("user_id", user.id)
+    .is("end_date", null)
+    .maybeSingle();
+
+  if (!ownership) return { error: "No active ownership found." };
+
+  const saleDate = (formData.get("sale_date") as string)?.trim();
+  if (!saleDate) return { error: "Sale date is required." };
+
+  const salePriceRaw = (formData.get("sale_price") as string)?.trim();
+  const salePrice = salePriceRaw ? parseFloat(salePriceRaw) : null;
+  const salePricePublic = formData.get("sale_price_public") === "true";
+  const currency = (formData.get("currency") as string)?.trim() || "EUR";
+
+  const { error } = await supabase
+    .from("ownerships")
+    .update({ end_date: saleDate, sale_price: salePrice, sale_price_public: salePricePublic, currency })
+    .eq("id", ownership.id);
+
+  if (error) return { error: "Failed to update. Please try again." };
+
+  revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/garage");
+  redirect(`/car/${car.slug}`);
+}
+
+export async function deleteCar(carId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Not authenticated";
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return "Car not found";
+
+  // Collect storage paths before deletion
+  const { data: photos } = await supabase
+    .from("photos")
+    .select("storage_path")
+    .eq("car_id", carId);
+
+  // Delete car record — cascades to events, photos rows, ownerships, vins
+  const { error } = await supabase.from("cars").delete().eq("id", carId);
+  if (error) return "Failed to delete car. Please try again.";
+
+  // Clean up storage files (best effort — don't block on errors)
+  const paths = (photos ?? []).map((p) => p.storage_path);
+  if (paths.length > 0) {
+    await supabase.storage.from("car-photos").remove(paths);
+  }
+
+  redirect("/garage");
+}
+
+export async function addPhotosToGallery(
+  carId: string,
+  paths: string[]
+): Promise<string | null> {
+  if (paths.length === 0) return null;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Not authenticated";
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return "Car not found";
+
+  const { data: lastPhoto } = await supabase
+    .from("photos")
+    .select("position")
+    .eq("car_id", carId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .single();
+
+  const startPosition = (lastPhoto?.position ?? -1) + 1;
+
+  const { error } = await supabase.from("photos").insert(
+    paths.map((storage_path, i) => ({
+      car_id: carId,
+      storage_path,
+      position: startPosition + i,
+    }))
+  );
+
+  if (error) return "Failed to save photos";
+  revalidatePath(`/car/${car.slug}`);
+  return null;
+}

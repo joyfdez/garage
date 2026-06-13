@@ -2,22 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, PlusCircle, User } from "lucide-react";
+import { Car, PlusCircle, Compass, User } from "lucide-react";
 
 const nav = [
   { href: "/garage", label: "Garage", icon: Car },
   { href: "/garage/new", label: "Add", icon: PlusCircle },
+  { href: "/explore", label: "Explore", icon: Compass },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
+const HIDDEN_PREFIXES = ["/auth", "/onboarding"];
+
+function isProfileActive(pathname: string) {
+  return (
+    pathname === "/profile" ||
+    pathname.startsWith("/u/") ||
+    pathname === "/settings"
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
+
+  if (
+    pathname === "/" ||
+    HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
+  ) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-background border-t border-card">
       <ul className="flex h-16 items-stretch">
         {nav.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+          const active =
+            href === "/profile"
+              ? isProfileActive(pathname)
+              : pathname === href || pathname.startsWith(href + "/");
           return (
             <li key={href} className="flex-1">
               <Link

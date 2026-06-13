@@ -1,0 +1,90 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { markAsSold, CarState } from "@/lib/actions/car";
+import { DollarSign, Eye, EyeOff } from "lucide-react";
+
+const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY"];
+
+export function MarkAsSoldForm({
+  carId,
+  carName,
+  purchaseCurrency,
+}: {
+  carId: string;
+  carName: string;
+  purchaseCurrency: string;
+}) {
+  const [state, action, pending] = useActionState<CarState, FormData>(markAsSold, null);
+  const [pricePublic, setPricePublic] = useState(false);
+  const [currency, setCurrency] = useState(purchaseCurrency || "EUR");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  return (
+    <form action={action} className="space-y-6">
+      <input type="hidden" name="car_id" value={carId} />
+      <input type="hidden" name="sale_price_public" value={String(pricePublic)} />
+
+      <div>
+        <label className="text-xs text-ink/50 mb-1 block">Sale date *</label>
+        <input
+          name="sale_date"
+          type="date"
+          required
+          defaultValue={today}
+          max={today}
+          className="input-field w-full"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs text-ink/50 block">Sale price (optional)</label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <DollarSign size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
+            <input
+              name="sale_price"
+              type="number"
+              min={0}
+              step="any"
+              placeholder="0"
+              className="input-field w-full pl-8"
+            />
+          </div>
+          <select
+            name="currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="input-field w-24"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setPricePublic((v) => !v)}
+          className={`flex items-center gap-1.5 text-xs transition-colors ${
+            pricePublic ? "text-orange" : "text-ink/40 hover:text-ink/60"
+          }`}
+        >
+          {pricePublic ? <Eye size={12} /> : <EyeOff size={12} />}
+          {pricePublic ? "Price visible on public car page" : "Price is private (only you see it)"}
+        </button>
+      </div>
+
+      {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full bg-ink text-background font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/80 transition-colors disabled:opacity-50"
+      >
+        {pending ? "Saving…" : `Mark ${carName} as sold`}
+      </button>
+    </form>
+  );
+}

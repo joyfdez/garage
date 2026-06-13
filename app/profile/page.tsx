@@ -1,8 +1,19 @@
-export default function ProfilePage() {
-  return (
-    <div className="px-4 py-6">
-      <h1 className="font-display text-2xl font-bold">Profile</h1>
-      <p className="mt-2 text-ink/50 text-sm">Coming in Phase 7.</p>
-    </div>
-  );
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function ProfilePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) redirect("/onboarding");
+  redirect(`/u/${profile.username}`);
 }

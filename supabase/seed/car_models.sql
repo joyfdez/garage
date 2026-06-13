@@ -11,7 +11,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Mazda', 'MX-5', 'ND',  'ND5RC',        2015, NULL, ARRAY['P5-VPS','P5-VP'],                        'mazda-mx5-nd',   'seed'),
 ('Mazda', 'RX-7', 'FC',  'FC3S',         1985, 1992, ARRAY['13B-T','13B-TURBO II'],                  'mazda-rx7-fc',   'seed'),
 ('Mazda', 'RX-7', 'FD',  'FD3S',         1992, 2002, ARRAY['13B-REW'],                               'mazda-rx7-fd',   'seed'),
-('Mazda', 'RX-8', NULL,  'SE3P',         2003, 2012, ARRAY['13B-MSP RENESIS'],                       'mazda-rx8',      'seed'),
+('Mazda', 'RX-8', 'SE3P',  'SE3P',         2003, 2012, ARRAY['13B-MSP RENESIS'],                       'mazda-rx8',      'seed'),
 ('Mazda', '323',  'BG',  'BG',           1989, 1994, ARRAY['B6T','B6','BP-T'],                       'mazda-323-bg',   'seed'),
 ('Mazda', '3',    'BK',  'BK',           2003, 2009, ARRAY['LF-DE','LF-VE','MZR 2.3 DISI'],          'mazda-3-bk',     'seed'),
 ('Mazda', '3',    'BL',  'BL',           2009, 2013, ARRAY['LF-VD','LF-VE','MZR 2.3 DISI'],          'mazda-3-bl',     'seed'),
@@ -29,7 +29,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('BMW', '5 Series', 'E39', 'E39', 1995, 2004, ARRAY['M52B28','M54B30','M62B44','S62B50'],              'bmw-5-series-e39', 'seed'),
 ('BMW', '5 Series', 'E60', 'E60', 2003, 2010, ARRAY['N52B25','N52B30','N62B48','S85B50'],              'bmw-5-series-e60', 'seed'),
 ('BMW', '6 Series', 'E24', 'E24', 1976, 1989, ARRAY['M30B28','M30B34','M88/3'],                        'bmw-6-series-e24', 'seed'),
-('BMW', '2002',     NULL,  'E10', 1968, 1976, ARRAY['M10B20','M10B20 Turbo'],                           'bmw-2002',         'seed'),
+('BMW', '2002',     'E10',  'E10', 1968, 1976, ARRAY['M10B20','M10B20 Turbo'],                           'bmw-2002',         'seed'),
 ('BMW', 'Z3',       'E36/7', 'E36/7', 1995, 2002, ARRAY['M43B19','M52B25','S52B32','S54B32'],           'bmw-z3',           'seed'),
 ('BMW', 'Z4',       'E85',   'E85',   2002, 2008, ARRAY['N46B20','N52B25','S54B32'],                    'bmw-z4-e85',       'seed'),
 ('BMW', '1 Series', 'E87',   'E87',   2004, 2011, ARRAY['N45B16','N46B20','N54B30'],                    'bmw-1-series-e87', 'seed'),
@@ -43,8 +43,8 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Toyota', 'Supra',       'A90',   'A90',        2019, NULL, ARRAY['B48B20','B58B30'],                       'toyota-supra-a90',        'seed'),
 ('Toyota', '86',          'ZN6',   'ZN6',        2012, 2021, ARRAY['FA20D'],                                 'toyota-86-zn6',           'seed'),
 ('Toyota', 'GR86',        'ZN8',   'ZN8',        2021, NULL, ARRAY['FA24D'],                                 'toyota-gr86-zn8',         'seed'),
-('Toyota', 'GR Yaris',   NULL,    'GXPA16',     2020, NULL, ARRAY['G16E-GTS'],                              'toyota-gr-yaris',         'seed'),
-('Toyota', 'GR Corolla', NULL,    'GZEA10H',    2022, NULL, ARRAY['G16E-GTS'],                              'toyota-gr-corolla',       'seed'),
+('Toyota', 'GR Yaris',   'GXPA16',    'GXPA16',     2020, NULL, ARRAY['G16E-GTS'],                              'toyota-gr-yaris',         'seed'),
+('Toyota', 'GR Corolla', 'GZEA10H',    'GZEA10H',    2022, NULL, ARRAY['G16E-GTS'],                              'toyota-gr-corolla',       'seed'),
 ('Toyota', 'Land Cruiser','FJ40',  'FJ40',       1960, 1984, ARRAY['F','2F','3F'],                           'toyota-land-cruiser-fj40','seed'),
 ('Toyota', 'Land Cruiser','60 Series','FJ60',    1980, 1987, ARRAY['2F','3F','2H'],                          'toyota-land-cruiser-60',  'seed'),
 ('Toyota', 'Land Cruiser','70 Series','HZJ/KZJ', 1984, NULL, ARRAY['3F','1HZ','1KZ-TE','1VD-FTV'],          'toyota-land-cruiser-70',  'seed'),
@@ -57,7 +57,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Toyota', 'Celica',      'ST205', 'ST205',      1994, 1999, ARRAY['3S-GTE'],                               'toyota-celica-st205',     'seed'),
 ('Toyota', 'Celica',      'ZZT230','ZZT230',     1999, 2006, ARRAY['1ZZ-FE','2ZZ-GE'],                      'toyota-celica-zzt230',    'seed'),
 ('Toyota', 'Chaser',      'JZX100','JZX100',     1996, 2001, ARRAY['1JZ-GE','1JZ-GTE','2JZ-GE'],           'toyota-chaser-jzx100',    'seed'),
-('Toyota', '2000GT',      NULL,    'MF10',       1967, 1970, ARRAY['2M','3M'],                              'toyota-2000gt',           'seed'),
+('Toyota', '2000GT',      'MF10',    'MF10',       1967, 1970, ARRAY['2M','3M'],                              'toyota-2000gt',           'seed'),
 
 -- ── Honda ──────────────────────────────────────────────────────────────────
 ('Honda', 'Civic', 'EF', 'EF',   1987, 1991, ARRAY['D15B','D16A','B16A'],                                   'honda-civic-ef',   'seed'),
@@ -68,12 +68,12 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Honda', 'Civic Type R', 'FK8', 'FK8', 2017, 2021, ARRAY['K20C1'],                                         'honda-civic-fk8',  'seed'),
 ('Honda', 'Civic Type R', 'FL5', 'FL5', 2022, NULL, ARRAY['K20C1'],                                         'honda-civic-fl5',  'seed'),
 ('Honda', 'CR-X', 'EF',  'EF',   1987, 1991, ARRAY['D15B2','D16A6','B16A'],                                 'honda-crx-ef',     'seed'),
-('Honda', 'S2000', NULL, 'AP1/AP2', 1999, 2009, ARRAY['F20C','F22C'],                                       'honda-s2000',      'seed'),
+('Honda', 'S2000', 'AP1/AP2', 'AP1/AP2', 1999, 2009, ARRAY['F20C','F22C'],                                       'honda-s2000',      'seed'),
 ('Honda', 'NSX',  'NA1', 'NA1',  1990, 2005, ARRAY['C30A','C32B'],                                          'honda-nsx-na1',    'seed'),
 ('Honda', 'NSX',  'NC1', 'NC1',  2016, 2022, ARRAY['J35Y5 Hybrid'],                                         'honda-nsx-nc1',    'seed'),
 ('Honda', 'Integra', 'DC2', 'DC2', 1993, 2001, ARRAY['B18B1','B18C1','B18C5'],                               'honda-integra-dc2','seed'),
 ('Honda', 'Integra', 'DC5', 'DC5', 2001, 2006, ARRAY['K20A','K20A2'],                                       'honda-integra-dc5','seed'),
-('Honda', 'Beat', NULL,  'PP1',  1991, 1996, ARRAY['E07A'],                                                  'honda-beat-pp1',   'seed'),
+('Honda', 'Beat', 'PP1',  'PP1',  1991, 1996, ARRAY['E07A'],                                                  'honda-beat-pp1',   'seed'),
 ('Honda', 'Prelude', 'BB6', 'BB6', 1997, 2001, ARRAY['H22A','F22B'],                                        'honda-prelude-bb6','seed'),
 
 -- ── Nissan / Datsun ────────────────────────────────────────────────────────
@@ -104,12 +104,12 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Volkswagen', 'Golf', 'Mk7', 'AU',  2012, 2020, ARRAY['1.0 TSI','1.4 TSI','2.0 TSI GTI','2.0 TSI R'],     'vw-golf-mk7', 'seed'),
 ('Volkswagen', 'Golf', 'Mk8', 'CD1', 2019, NULL, ARRAY['1.0 eTSI','1.5 eTSI','2.0 TSI GTI','2.0 TSI R'],  'vw-golf-mk8', 'seed'),
 ('Volkswagen', 'Golf R', 'Mk7', 'AU', 2013, 2020, ARRAY['EA888 2.0 TSI'],                                   'vw-golf-r-mk7', 'seed'),
-('Volkswagen', 'Corrado', NULL, '50', 1988, 1995, ARRAY['1.8 G60','2.0','2.8 VR6','2.9 VR6'],               'vw-corrado',  'seed'),
+('Volkswagen', 'Corrado', 'Gen 1', '50', 1988, 1995, ARRAY['1.8 G60','2.0','2.8 VR6','2.9 VR6'],               'vw-corrado',  'seed'),
 ('Volkswagen', 'Scirocco', 'Mk1', '53', 1974, 1981, ARRAY['1.1','1.5','1.6 GTI'],                           'vw-scirocco-mk1', 'seed'),
 ('Volkswagen', 'Scirocco', 'Mk2', '53B', 1981, 1992, ARRAY['1.6','1.8 GTI','1.8 G60','2.0 16V'],            'vw-scirocco-mk2', 'seed'),
 ('Volkswagen', 'Polo GTI', '9N',  '9N', 2005, 2009, ARRAY['1.8T 20V'],                                      'vw-polo-gti-9n', 'seed'),
 ('Volkswagen', 'Polo GTI', '6R',  '6R', 2010, 2017, ARRAY['1.4 TSI'],                                       'vw-polo-gti-6r', 'seed'),
-('Volkswagen', 'Lupo GTI', NULL, '6X', 2000, 2005, ARRAY['1.6 FSI'],                                         'vw-lupo-gti',    'seed'),
+('Volkswagen', 'Lupo GTI', '6X', '6X', 2000, 2005, ARRAY['1.6 FSI'],                                         'vw-lupo-gti',    'seed'),
 
 -- ── Porsche ────────────────────────────────────────────────────────────────
 ('Porsche', '911', 'G-body',  '930',  1973, 1989, ARRAY['2.7','3.0 SC','3.2 Carrera','3.3 Turbo'],          'porsche-911-g',       'seed'),
@@ -119,13 +119,13 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Porsche', '911', '997',     '997',  2004, 2012, ARRAY['3.6 Carrera','3.8 Carrera S','3.6 Turbo','GT3'],   'porsche-911-997',     'seed'),
 ('Porsche', '911', '991',     '991',  2011, 2019, ARRAY['3.4 Carrera','3.8 Carrera S','GT3','GT3 RS'],      'porsche-911-991',     'seed'),
 ('Porsche', '911', '992',     '992',  2019, NULL, ARRAY['3.0 Carrera','3.0 Carrera S','GT3','GT3 RS'],      'porsche-911-992',     'seed'),
-('Porsche', '914', NULL,      '914',  1969, 1976, ARRAY['1.7','2.0','914/6 2.0'],                           'porsche-914',         'seed'),
-('Porsche', '924', NULL,      '924',  1976, 1988, ARRAY['2.0','2.0 Turbo'],                                 'porsche-924',         'seed'),
-('Porsche', '944', NULL,      '944',  1982, 1991, ARRAY['2.5','2.5 Turbo','3.0 S2'],                        'porsche-944',         'seed'),
+('Porsche', '914', 'Gen 1',      '914',  1969, 1976, ARRAY['1.7','2.0','914/6 2.0'],                           'porsche-914',         'seed'),
+('Porsche', '924', 'Gen 1',      '924',  1976, 1988, ARRAY['2.0','2.0 Turbo'],                                 'porsche-924',         'seed'),
+('Porsche', '944', 'Gen 1',      '944',  1982, 1991, ARRAY['2.5','2.5 Turbo','3.0 S2'],                        'porsche-944',         'seed'),
 ('Porsche', 'Boxster', '986', '986',  1996, 2004, ARRAY['2.5','2.7','3.2 S'],                               'porsche-boxster-986', 'seed'),
 ('Porsche', 'Boxster', '987', '987',  2004, 2012, ARRAY['2.7','3.2 S','3.4 Spyder'],                        'porsche-boxster-987', 'seed'),
 ('Porsche', 'Cayman', '987c', '987c', 2005, 2013, ARRAY['2.7','3.4 S','3.4 R'],                             'porsche-cayman-987c', 'seed'),
-('Porsche', '356', NULL,      '356',  1948, 1965, ARRAY['1.1','1.3','1.5','1.6','2.0'],                     'porsche-356',         'seed'),
+('Porsche', '356', 'Gen 1',      '356',  1948, 1965, ARRAY['1.1','1.3','1.5','1.6','2.0'],                     'porsche-356',         'seed'),
 
 -- ── Ford ───────────────────────────────────────────────────────────────────
 ('Ford', 'Mustang', 'Gen 1', NULL,   1964, 1973, ARRAY['170 I6','289 V8','302 V8','390 V8','428 V8'],       'ford-mustang-gen1',   'seed'),
@@ -146,9 +146,9 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Ford', 'Bronco',  'Gen 6', NULL,   2021, NULL, ARRAY['2.3 EcoBoost','2.7 EcoBoost V6'],                   'ford-bronco-gen6',    'seed'),
 
 -- ── Mercedes-Benz ──────────────────────────────────────────────────────────
-('Mercedes-Benz', 'W123',     NULL, 'W123', 1976, 1985, ARRAY['200','230E','280E','240D','300D'],            'mercedes-w123',      'seed'),
-('Mercedes-Benz', 'W124',     NULL, 'W124', 1984, 1997, ARRAY['200E','230E','260E','300E','500E','300D'],    'mercedes-w124',      'seed'),
-('Mercedes-Benz', '190E/W201',NULL, 'W201', 1982, 1993, ARRAY['1.8','2.0','2.3 Cosworth','2.5 Cosworth'],  'mercedes-w201',      'seed'),
+('Mercedes-Benz', 'W123',     'W123', 'W123', 1976, 1985, ARRAY['200','230E','280E','240D','300D'],            'mercedes-w123',      'seed'),
+('Mercedes-Benz', 'W124',     'W124', 'W124', 1984, 1997, ARRAY['200E','230E','260E','300E','500E','300D'],    'mercedes-w124',      'seed'),
+('Mercedes-Benz', '190E/W201','W201', 'W201', 1982, 1993, ARRAY['1.8','2.0','2.3 Cosworth','2.5 Cosworth'],  'mercedes-w201',      'seed'),
 ('Mercedes-Benz', 'E-Class',  'W210','W210', 1995, 2003, ARRAY['E200','E320','E430','E55 AMG'],              'mercedes-w210',      'seed'),
 ('Mercedes-Benz', 'S-Class',  'W126','W126', 1979, 1991, ARRAY['280SE','380SE','420SE','560SEL'],           'mercedes-w126',      'seed'),
 ('Mercedes-Benz', 'SL',       'R107','R107', 1971, 1989, ARRAY['280SL','350SL','380SL','450SL','500SL'],   'mercedes-r107',      'seed'),
@@ -156,11 +156,11 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Mercedes-Benz', 'C-Class',  'W202','W202', 1993, 2000, ARRAY['C180','C200','C36 AMG','C43 AMG'],         'mercedes-w202',      'seed'),
 
 -- ── Volvo ──────────────────────────────────────────────────────────────────
-('Volvo', '240', NULL,   'P242/P245', 1974, 1993, ARRAY['B19A','B21A','B23E','B230F'],                      'volvo-240',    'seed'),
-('Volvo', '740', NULL,   '744/745',   1984, 1992, ARRAY['B23F','B230F','B28F','B200'],                      'volvo-740',    'seed'),
-('Volvo', '850', NULL,   '854/855',   1991, 1997, ARRAY['B5204S','B5234T','B5254S','B5254T'],               'volvo-850',    'seed'),
-('Volvo', 'V70 R',NULL,  'P80',       1997, 2000, ARRAY['B5254T2'],                                         'volvo-v70r',   'seed'),
-('Volvo', 'C30',  NULL,  'P1',        2006, 2013, ARRAY['2.0','2.4i','T5','2.0D'],                          'volvo-c30',    'seed'),
+('Volvo', '240', 'P242/P245',   'P242/P245', 1974, 1993, ARRAY['B19A','B21A','B23E','B230F'],                      'volvo-240',    'seed'),
+('Volvo', '740', '744/745',   '744/745',   1984, 1992, ARRAY['B23F','B230F','B28F','B200'],                      'volvo-740',    'seed'),
+('Volvo', '850', '854/855',   '854/855',   1991, 1997, ARRAY['B5204S','B5234T','B5254S','B5254T'],               'volvo-850',    'seed'),
+('Volvo', 'V70 R','P80',  'P80',       1997, 2000, ARRAY['B5254T2'],                                         'volvo-v70r',   'seed'),
+('Volvo', 'C30',  'P1',  'P1',        2006, 2013, ARRAY['2.0','2.4i','T5','2.0D'],                          'volvo-c30',    'seed'),
 
 -- ── Subaru ─────────────────────────────────────────────────────────────────
 ('Subaru', 'Impreza WRX', 'GC8',  'GC8',  1992, 2000, ARRAY['EJ20G','EJ207'],                              'subaru-impreza-gc8',  'seed'),
@@ -171,7 +171,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Subaru', 'BRZ',         'ZC6',  'ZC6',  2012, 2021, ARRAY['FA20D'],                                       'subaru-brz-zc6',      'seed'),
 ('Subaru', 'BRZ',         'ZD8',  'ZD8',  2021, NULL, ARRAY['FA24D'],                                       'subaru-brz-zd8',      'seed'),
 ('Subaru', 'Legacy B4',   'BE5',  'BE5',  1998, 2003, ARRAY['EJ206','EJ208'],                               'subaru-legacy-b4-be5','seed'),
-('Subaru', 'SVX',         NULL,   'CXW',  1991, 1997, ARRAY['EG33'],                                        'subaru-svx',          'seed'),
+('Subaru', 'SVX',         'CXW',   'CXW',  1991, 1997, ARRAY['EG33'],                                        'subaru-svx',          'seed'),
 
 -- ── Mitsubishi ─────────────────────────────────────────────────────────────
 ('Mitsubishi', 'Lancer Evolution', 'Evo I',   'CD9A',  1992, 1993, ARRAY['4G63T'],                          'mitsubishi-evo-1',  'seed'),
@@ -186,7 +186,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Mitsubishi', 'Lancer Evolution', 'Evo X',   'CZ4A',  2007, 2016, ARRAY['4B11T'],                          'mitsubishi-evo-10', 'seed'),
 ('Mitsubishi', 'Eclipse', '1G',  'D27A/D32A', 1989, 1994, ARRAY['4G37','4G63T','6G72'],                     'mitsubishi-eclipse-1g','seed'),
 ('Mitsubishi', 'Eclipse', '2G',  'D31A/D32A', 1994, 1999, ARRAY['4G64','4G63T','6G72T'],                    'mitsubishi-eclipse-2g','seed'),
-('Mitsubishi', 'GTO/3000GT','NULL','Z15A/Z16A', 1990, 2000, ARRAY['6G72','6G72T'],                          'mitsubishi-gto',      'seed'),
+('Mitsubishi', 'GTO/3000GT','Z15A/Z16A','Z15A/Z16A', 1990, 2000, ARRAY['6G72','6G72T'],                          'mitsubishi-gto',      'seed'),
 
 -- ── Renault ────────────────────────────────────────────────────────────────
 ('Renault', '5',      'GT Turbo', 'C40', 1985, 1991, ARRAY['C1J Turbo'],                                    'renault-5-gt-turbo',    'seed'),
@@ -201,7 +201,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 -- ── Peugeot ────────────────────────────────────────────────────────────────
 ('Peugeot', '205',  'GTI',   NULL,  1984, 1994, ARRAY['TU1','XU5JA 1.6','XU9JA 1.9'],                      'peugeot-205-gti',  'seed'),
 ('Peugeot', '106',  'GTI',   NULL,  1991, 2003, ARRAY['TU5J4 1.6'],                                        'peugeot-106-gti',  'seed'),
-('Peugeot', '306',  NULL,    NULL,  1993, 2002, ARRAY['XU5 1.4','TU5JP4','XU10J4','XU7JP 1.8'],             'peugeot-306',      'seed'),
+('Peugeot', '306',  'Gen 1',    NULL,  1993, 2002, ARRAY['XU5 1.4','TU5JP4','XU10J4','XU7JP 1.8'],             'peugeot-306',      'seed'),
 ('Peugeot', '207',  'GTI',   NULL,  2006, 2012, ARRAY['EP6DT 1.6T','EP6CDT THP'],                           'peugeot-207-gti',  'seed'),
 
 -- ── Alfa Romeo ─────────────────────────────────────────────────────────────
@@ -210,7 +210,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Alfa Romeo', '75/Milano','116','116',  1985, 1992, ARRAY['1.6','1.8','2.0 Twin Spark','3.0 V6'],         'alfa-75-116',      'seed'),
 ('Alfa Romeo', 'GTV',    '916',  '916',  1993, 2004, ARRAY['2.0 Twin Spark','3.0 V6 24V'],                 'alfa-gtv-916',     'seed'),
 ('Alfa Romeo', 'Spider', '916',  '916',  1994, 2005, ARRAY['2.0 Twin Spark','3.0 V6'],                     'alfa-spider-916',  'seed'),
-('Alfa Romeo', '147 GTA',NULL,  '937',   2003, 2005, ARRAY['3.2 V6 Busso'],                                'alfa-147-gta',     'seed'),
+('Alfa Romeo', '147 GTA','GTA',  '937',   2003, 2005, ARRAY['3.2 V6 Busso'],                                'alfa-147-gta',     'seed'),
 ('Alfa Romeo', 'Giulia', '952',  '952',  2016, NULL, ARRAY['2.0T 200hp','2.0T 280hp','2.9 V6 Quadrifoglio'],'alfa-giulia-952', 'seed'),
 
 -- ── Mini ───────────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Mini', 'Mini',    'R56',     'R56', 2006, 2013, ARRAY['N14B16A','N18B16A','N12B16A'],                      'mini-r56',      'seed'),
 
 -- ── Land Rover ─────────────────────────────────────────────────────────────
-('Land Rover', 'Series III', NULL,    NULL,   1971, 1985, ARRAY['2.25 Petrol','2.25 Diesel','3.5 V8'],       'landrover-series-3',    'seed'),
+('Land Rover', 'Series III', 'Series III',    NULL,   1971, 1985, ARRAY['2.25 Petrol','2.25 Diesel','3.5 V8'],       'landrover-series-3',    'seed'),
 ('Land Rover', 'Defender',   'Classic','90/110', 1983, 2016, ARRAY['2.5 Petrol','200Tdi','300Tdi','TD5'],    'landrover-defender',     'seed'),
 ('Land Rover', 'Defender',   'L663',  'L663', 2020, NULL, ARRAY['P300','P400','D200','D300'],                'landrover-defender-l663','seed'),
 
@@ -228,23 +228,23 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Jeep', 'Wrangler', 'TJ', 'TJ', 1997, 2006, ARRAY['2.5L I4','4.0L I6'],                                   'jeep-wrangler-tj', 'seed'),
 ('Jeep', 'Wrangler', 'JK', 'JK', 2006, 2018, ARRAY['3.8L V6','3.6L V6','2.8 CRD'],                         'jeep-wrangler-jk', 'seed'),
 ('Jeep', 'Wrangler', 'JL', 'JL', 2018, NULL, ARRAY['2.0T','3.6L V6','3.0 EcoDiesel'],                      'jeep-wrangler-jl', 'seed'),
-('Jeep', 'CJ-7',     NULL, 'CJ', 1976, 1986, ARRAY['2.5L I4','4.2L I6','5.0L V8'],                         'jeep-cj7',        'seed'),
+('Jeep', 'CJ-7',     'CJ', 'CJ', 1976, 1986, ARRAY['2.5L I4','4.2L I6','5.0L V8'],                         'jeep-cj7',        'seed'),
 ('Jeep', 'Gladiator','JT',  'JT', 2019, NULL, ARRAY['3.6L V6','3.0 EcoDiesel','2.0T'],                     'jeep-gladiator-jt','seed'),
 
 -- ── Audi ───────────────────────────────────────────────────────────────────
 ('Audi', 'Quattro',   'Ur-Quattro', '85', 1980, 1991, ARRAY['WR 2.1T','MB 2.1T','RR 2.2T'],                'audi-quattro-ur',  'seed'),
-('Audi', 'RS2',        NULL,        'B4', 1994, 1995, ARRAY['ADU 2.2T'],                                    'audi-rs2',         'seed'),
+('Audi', 'RS2',        'B4',        'B4', 1994, 1995, ARRAY['ADU 2.2T'],                                    'audi-rs2',         'seed'),
 ('Audi', 'TT',         '8N',        '8N', 1998, 2006, ARRAY['1.8T 180hp','1.8T 225hp','3.2 VR6'],           'audi-tt-8n',       'seed'),
 ('Audi', 'TT',         '8J',        '8J', 2006, 2014, ARRAY['2.0 TFSI','3.2 VR6','TTS','TTRS'],             'audi-tt-8j',       'seed'),
 ('Audi', 'TT',         '8S',        '8S', 2014, 2023, ARRAY['2.0 TFSI 230hp','TTS','TTRS'],                 'audi-tt-8s',       'seed'),
 
 -- ── Lancia ─────────────────────────────────────────────────────────────────
-('Lancia', 'Delta HF Integrale', NULL, '831', 1987, 1993, ARRAY['8V HF Integrale','16V','Evoluzione'],       'lancia-delta-hf-integrale','seed'),
-('Lancia', 'Stratos',            NULL, 'Type 829', 1973, 1978, ARRAY['Ferrari Dino 2.4 V6'],                'lancia-stratos',          'seed'),
-('Lancia', 'Fulvia',             NULL, '818',  1963, 1976, ARRAY['1.0','1.2','1.3 HF','1.6 HF'],            'lancia-fulvia',           'seed'),
+('Lancia', 'Delta HF Integrale', 'Integrale', '831', 1987, 1993, ARRAY['8V HF Integrale','16V','Evoluzione'],       'lancia-delta-hf-integrale','seed'),
+('Lancia', 'Stratos',            'Gen 1', 'Type 829', 1973, 1978, ARRAY['Ferrari Dino 2.4 V6'],                'lancia-stratos',          'seed'),
+('Lancia', 'Fulvia',             'Gen 1', '818',  1963, 1976, ARRAY['1.0','1.2','1.3 HF','1.6 HF'],            'lancia-fulvia',           'seed'),
 
 -- ── Fiat ───────────────────────────────────────────────────────────────────
-('Fiat', '124 Spider', NULL,   '124AS', 1966, 1985, ARRAY['1.4 OHC','1.6 DOHC','1.8 DOHC','2.0 DOHC'],    'fiat-124-spider',   'seed'),
+('Fiat', '124 Spider', 'Classic',   '124AS', 1966, 1985, ARRAY['1.4 OHC','1.6 DOHC','1.8 DOHC','2.0 DOHC'],    'fiat-124-spider',   'seed'),
 ('Fiat', '500',        'Classic','110', 1957, 1975, ARRAY['479cc','499cc','594cc'],                          'fiat-500-classic',  'seed'),
 ('Fiat', 'Punto',      'GT',    '176',  1994, 1999, ARRAY['1.4T GT'],                                       'fiat-punto-gt',     'seed'),
 
@@ -280,9 +280,9 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Lexus', 'SC',  'Z30',  'Z30',  1991, 2000, ARRAY['1UZ-FE','2JZ-GE'],                                      'lexus-sc-z30',    'seed'),
 
 -- ── British classics ───────────────────────────────────────────────────────
-('Triumph',  'TR6',  NULL,   NULL,  1969, 1976, ARRAY['2.5 I6'],                                             'triumph-tr6',   'seed'),
-('Triumph',  'TR7',  NULL,   NULL,  1975, 1981, ARRAY['2.0 I4','3.5 V8 TR8'],                               'triumph-tr7',   'seed'),
-('MG',       'MGB',  NULL,   'GHN', 1962, 1980, ARRAY['1.8 B-series'],                                      'mg-mgb',        'seed'),
+('Triumph',  'TR6',  'Gen 1',   NULL,  1969, 1976, ARRAY['2.5 I6'],                                             'triumph-tr6',   'seed'),
+('Triumph',  'TR7',  'Gen 1',   NULL,  1975, 1981, ARRAY['2.0 I4','3.5 V8 TR8'],                               'triumph-tr7',   'seed'),
+('MG',       'MGB',  'Classic',   'GHN', 1962, 1980, ARRAY['1.8 B-series'],                                      'mg-mgb',        'seed'),
 ('Jaguar',   'E-Type','Series 1','XKE', 1961, 1968, ARRAY['XK 3.8','XK 4.2'],                               'jaguar-etype-s1','seed'),
 ('Jaguar',   'E-Type','Series 3','XKE', 1971, 1975, ARRAY['5.3 V12'],                                       'jaguar-etype-s3','seed'),
 
@@ -297,4 +297,4 @@ INSERT INTO public.car_models (make, model, generation, chassis_code, year_start
 ('Hyundai', 'Genesis Coupe', 'BK',  'BK',  2008, 2016, ARRAY['2.0T','3.8 V6'],                             'hyundai-genesis-coupe-bk','seed'),
 ('Kia',     'Stinger',       'CK',  'CK',  2018, NULL, ARRAY['2.0T','3.3T V6 GT'],                          'kia-stinger-ck',          'seed')
 
-;
+ON CONFLICT (slug) DO NOTHING;
