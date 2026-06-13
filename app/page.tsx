@@ -21,9 +21,22 @@ const VALUE_PROPS = [
   },
 ] as const;
 
-// ── CTA button (used twice — same style both places) ──────────────────────────
+// ── CTA buttons — two variants, same copy ────────────────────────────────────
 
-function CtaButton() {
+// Hero variant: paper bg so it reads against any dark photo
+function HeroCtaButton() {
+  return (
+    <Link
+      href="/garage/new"
+      className="inline-flex items-center gap-2 bg-paper text-ink font-display font-bold px-6 py-3.5 rounded-input text-sm hover:bg-white transition-colors"
+    >
+      Add your first car
+    </Link>
+  );
+}
+
+// Section variant: ink bg, fine on the light paper background
+function SectionCtaButton() {
   return (
     <Link
       href="/garage/new"
@@ -73,25 +86,31 @@ export default async function LandingPage() {
 
         {/* Hero content — bottom-aligned, fades-and-rises on load */}
         <div
-          className="relative z-10 px-5 pb-14 space-y-5 fade-rise"
+          className="relative z-10 px-5 space-y-5 fade-rise"
           style={{ "--rise-delay": "150ms" } as React.CSSProperties}
         >
           {/* Headline — Archivo extrabold, fills width, 2-3 lines */}
           <h1
             className="font-display font-extrabold text-white tracking-tight leading-[0.92]"
-            style={{ fontSize: "clamp(2.8rem, 10.5vw, 5.5rem)" }}
+            style={{
+              fontSize: "clamp(2.8rem, 10.5vw, 5.5rem)",
+              textShadow: "0 2px 24px rgba(0,0,0,0.45)",
+            }}
           >
             The home for people who build cars.
           </h1>
 
           {/* Sub-line — magazine-metadata style */}
-          <p className="text-white/55 text-[0.62rem] uppercase tracking-[0.22em] font-semibold">
+          <p
+            className="text-white/70 text-[0.62rem] uppercase tracking-[0.22em] font-bold"
+            style={{ textShadow: "0 1px 12px rgba(0,0,0,0.55)" }}
+          >
             Add your car&nbsp;&middot;&nbsp;Track its life&nbsp;&middot;&nbsp;Share the journey
           </p>
 
-          {/* Primary CTA */}
-          <div className="pt-1">
-            <CtaButton />
+          {/* Primary CTA — paper bg so it pops against any part of the photo */}
+          <div className="pt-3 pb-10">
+            <HeroCtaButton />
           </div>
         </div>
 
@@ -128,7 +147,7 @@ export default async function LandingPage() {
         {/* Second CTA */}
         <ScrollReveal delay={380}>
           <div className="mt-12 pb-4">
-            <CtaButton />
+            <SectionCtaButton />
           </div>
         </ScrollReveal>
       </section>
