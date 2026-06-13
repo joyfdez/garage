@@ -75,3 +75,17 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+@keyframes floatDown {
+  0%, 100% { transform: translateY(0);   opacity: 0.35; }
+  50%       { transform: translateY(7px); opacity: 0.65; }
+}
+
+/* Scroll-cue chevron inner loop — parent handles positioning + fade-in */
+.scroll-cue-inner {
+  animation: floatDown 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue-inner { animation: none; }
+}
