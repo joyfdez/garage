@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getOrigin } from "@/lib/utils/getOrigin";
 
 export async function GET(request: Request) {
-  const { origin } = new URL(request.url);
+  const origin = getOrigin(request);
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
