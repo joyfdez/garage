@@ -16,18 +16,36 @@ export default async function ExplorePage() {
 
   if (!user) redirect("/auth/login");
 
-  const { data: tags } = await supabase
-    .from("user_model_tags")
-    .select("model_id, tag_type")
-    .eq("user_id", user.id);
+  // Fetch in parallel: user's tags + full catalog
+  const [{ data: tags }, { data: allModels }] = await Promise.all([
+    supabase
+      .from("user_model_tags")
+      .select("model_id, tag_type")
+      .eq("user_id", user.id),
+    supabase
+      .from("car_models")
+      .select("id, make, model, generation, chassis_code, year_start, year_end, engines, slug")
+      .order("make")
+      .order("model")
+      .order("year_start"),
+  ]);
 
   return (
-    <div className="pb-24 px-4">
-      <div className="pt-6 pb-5">
-        <h1 className="font-display font-bold text-2xl">Explore</h1>
-        <p className="text-ink/40 text-sm mt-1">Tag models you&apos;ve driven or want to drive.</p>
+    <div className="bg-paper min-h-dvh pb-24 page-enter">
+      {/* ── Header ── */}
+      <div className="px-5 pt-8 pb-6">
+        <h1 className="font-display font-extrabold text-[2rem] leading-tight text-ink tracking-tight">
+          Explore
+        </h1>
+        <p className="text-[0.6rem] uppercase tracking-[0.2em] font-bold text-hint mt-1.5">
+          Tag what you&apos;ve driven&nbsp;&middot;&nbsp;Build your wishlist
+        </p>
       </div>
-      <ExploreSearch initialTags={tags ?? []} />
+
+      <ExploreSearch
+        initialTags={tags ?? []}
+        allModels={allModels ?? []}
+      />
     </div>
   );
 }
