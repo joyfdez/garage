@@ -168,7 +168,7 @@ export default async function CarPage({
           src={coverUrl}
           alt={`${car.year} ${make} ${model}`}
           className="w-full aspect-[4/3] object-cover"
-          priority-hint="high"
+          fetchPriority="high"
         />
       ) : (
         <div className="w-full aspect-[4/3] bg-card flex items-center justify-center">

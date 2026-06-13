@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
+import { debounce } from "@/lib/utils/debounce";
 
 export interface CarModel {
   id: string;
@@ -17,14 +18,6 @@ export interface CarModel {
 
 export function yearLabel(m: CarModel) {
   return `${m.year_start}–${m.year_end ?? "present"}`;
-}
-
-function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
 }
 
 export function BrowsePicker({

@@ -63,45 +63,45 @@ export async function createCar(
     extraPhotoPaths.push(p);
   }
 
-  const { data: car, error: carError } = await supabase
-    .from("cars")
-    .insert({
-      slug,
-      current_owner_id: user.id,
-      model_id: modelId,
-      custom_make: customMake,
-      custom_model: customModel,
-      custom_generation: customGeneration,
-      year: rawYear,
-      engine,
-      transmission,
-      color,
-      nickname,
-      location,
-      visibility,
-      cover_photo_path: coverPhotoPath,
-    })
-    .select("id, slug")
-    .single();
-
-  if (carError) {
-    return { error: "Something went wrong saving your car. Please try again." };
-  }
-
   const purchaseDate = (formData.get("purchase_date") as string)?.trim() || null;
   const purchasePriceRaw = (formData.get("purchase_price") as string)?.trim();
   const purchasePrice = purchasePriceRaw ? parseFloat(purchasePriceRaw) : null;
   const purchasePricePublic = formData.get("purchase_price_public") === "true";
   const currency = (formData.get("currency") as string)?.trim() || "EUR";
 
-  await supabase.from("ownerships").insert({
-    car_id: car.id,
-    user_id: user.id,
-    start_date: purchaseDate,
-    purchase_price: purchasePrice,
-    purchase_price_public: purchasePricePublic,
-    currency,
-  });
+  // Atomic: car + ownership are created in one transaction via a Postgres function.
+  // If either insert fails, neither is committed — no orphan cars possible.
+  const { data: rpcData, error: carError } = await supabase.rpc(
+    "create_car_with_ownership",
+    {
+      p_slug:                  slug,
+      p_model_id:              modelId,
+      p_custom_make:           customMake,
+      p_custom_model:          customModel,
+      p_custom_generation:     customGeneration,
+      p_year:                  rawYear,
+      p_engine:                engine,
+      p_transmission:          transmission,
+      p_color:                 color,
+      p_nickname:              nickname,
+      p_location:              location,
+      p_visibility:            visibility,
+      p_cover_photo_path:      coverPhotoPath,
+      p_start_date:            purchaseDate,
+      p_purchase_price:        purchasePrice,
+      p_purchase_price_public: purchasePricePublic,
+      p_currency:              currency,
+    }
+  );
+
+  if (carError) {
+    if (carError.code === "23505") {
+      return { error: "Couldn't generate a unique URL — please try again." };
+    }
+    return { error: "Something went wrong saving your car. Please try again." };
+  }
+
+  const car = rpcData as { id: string; slug: string };
 
   if (vin) {
     await supabase.from("car_vins").insert({ car_id: car.id, vin });

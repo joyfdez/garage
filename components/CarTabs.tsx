@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Wrench, Hammer, Clock, Images, Plus, Calendar } from "lucide-react";
 import { PhotoGallery } from "@/components/PhotoGallery";
 
-type EventType = "build" | "fix" | "service" | "story";
+type EventType = "build" | "fix";
 
 interface CarEvent {
   id: string;
@@ -36,8 +36,6 @@ type Tab = "timeline" | "mods" | "fixes" | "gallery";
 const TYPE_LABELS: Record<EventType, string> = {
   build: "Build",
   fix: "Fix",
-  service: "Service",
-  story: "Story",
 };
 
 function EventCard({ event, carSlug, supabaseUrl }: { event: CarEvent; carSlug: string; supabaseUrl: string }) {

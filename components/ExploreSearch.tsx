@@ -4,16 +4,9 @@ import { useState, useCallback, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
 import { BrowsePicker, CarModel, yearLabel } from "@/components/BrowsePicker";
+import { debounce } from "@/lib/utils/debounce";
 
 type InitialTag = { model_id: string; tag_type: string };
-
-function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
-}
 
 function TagButtons({
   modelId,

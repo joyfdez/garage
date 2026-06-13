@@ -112,6 +112,7 @@ export function EditCarForm({
     const tempId = crypto.randomUUID();
     const uploaded: PhotoItem[] = [];
 
+    let failed = 0;
     for (const file of Array.from(files)) {
       try {
         const compressed = await imageCompression(file, {
@@ -124,7 +125,10 @@ export function EditCarForm({
         const path = `${userId}/${tempId}/${webpFile.name}`;
         const { error } = await supabase.storage.from("car-photos").upload(path, webpFile);
         if (!error) uploaded.push({ id: crypto.randomUUID(), storage_path: path });
-      } catch { /* skip */ }
+        else failed++;
+      } catch {
+        failed++;
+      }
     }
 
     if (uploaded.length > 0) {
@@ -134,6 +138,14 @@ export function EditCarForm({
       } else {
         setPhotos((prev) => [...prev, ...uploaded]);
       }
+    }
+
+    if (failed > 0) {
+      setPhotoError(
+        failed === files.length
+          ? "Photos couldn't be uploaded — check your connection and try again."
+          : `${failed} of ${files.length} photos failed to upload.`
+      );
     }
 
     setUploading(false);

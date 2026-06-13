@@ -4,8 +4,6 @@ import { useActionState, useState } from "react";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { DollarSign, Eye, EyeOff } from "lucide-react";
 
-const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY"];
-
 export function MarkAsSoldForm({
   carId,
   carName,
@@ -17,7 +15,7 @@ export function MarkAsSoldForm({
 }) {
   const [state, action, pending] = useActionState<CarState, FormData>(markAsSold, null);
   const [pricePublic, setPricePublic] = useState(false);
-  const [currency, setCurrency] = useState(purchaseCurrency || "EUR");
+  const lockedCurrency = purchaseCurrency || "EUR";
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -52,16 +50,10 @@ export function MarkAsSoldForm({
               className="input-field w-full pl-8"
             />
           </div>
-          <select
-            name="currency"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            className="input-field w-24"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <div className="input-field w-24 flex items-center justify-center text-ink/50 text-sm select-none">
+            {lockedCurrency}
+          </div>
+          <input type="hidden" name="currency" value={lockedCurrency} />
         </div>
 
         <button

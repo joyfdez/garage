@@ -26,7 +26,8 @@ export async function toggleModelTag(
     const { error } = await supabase
       .from("user_model_tags")
       .delete()
-      .eq("id", existing.id);
+      .eq("id", existing.id)
+      .eq("user_id", user.id);
     return { tagged: false, error: error?.message };
   } else {
     const { error } = await supabase

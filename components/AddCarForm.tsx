@@ -3,23 +3,171 @@
 import {
   useActionState, useRef, useState, useCallback, useEffect,
 } from "react";
-import { Search, ChevronDown, Lock, Globe, X, Check, ChevronRight, Eye, EyeOff, DollarSign } from "lucide-react";
+import {
+  Search, ChevronDown, Lock, Globe, X, Check, ChevronRight,
+  Eye, EyeOff, DollarSign,
+} from "lucide-react";
 import { createCar, CarState } from "@/lib/actions/car";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
-import { BrowsePicker, CarModel, yearLabel } from "@/components/BrowsePicker";
+import { type CarModel, yearLabel } from "@/components/BrowsePicker";
+import { debounce } from "@/lib/utils/debounce";
 
 interface UploadedPhoto {
   path: string;
   previewUrl: string;
 }
 
-function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
+// ── Inline cascade (primary path) ────────────────────────────────────────────
+// Like BrowsePicker but fires onResolve(model, year) — year is captured here
+// as step 3, so the parent doesn't need a separate year input for cascade path.
+
+function CascadePicker({
+  onResolve,
+}: {
+  onResolve: (model: CarModel, year: string) => void;
+}) {
+  const [makes, setMakes] = useState<string[]>([]);
+  const [cMake, setCMake] = useState("");
+  const [cModels, setCModels] = useState<string[]>([]);
+  const [cModel, setCModel] = useState("");
+  const [cYear, setCYear] = useState("");
+  const [resolving, setResolving] = useState(false);
+  const [matches, setMatches] = useState<CarModel[] | null>(null);
+  const [pickIdx, setPickIdx] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/car-models/makes").then((r) => r.json()).then(setMakes).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setCModel(""); setCYear(""); setMatches(null);
+    if (!cMake) { setCModels([]); return; }
+    fetch(`/api/car-models/models?make=${encodeURIComponent(cMake)}`)
+      .then((r) => r.json()).then(setCModels).catch(() => {});
+  }, [cMake]);
+
+  useEffect(() => { setCYear(""); setMatches(null); }, [cModel]);
+
+  const resolve = useCallback(
+    debounce(async (make: string, model: string, y: string) => {
+      const yr = parseInt(y, 10);
+      if (!make || !model || isNaN(yr) || yr < 1885 || yr > new Date().getFullYear() + 2) {
+        setMatches(null);
+        return;
+      }
+      setResolving(true);
+      try {
+        const res = await fetch(
+          `/api/car-models/resolve?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${yr}`
+        );
+        const data: CarModel[] = await res.json();
+        setMatches(data);
+        setPickIdx(0);
+        if (data.length === 1) onResolve(data[0], y);
+      } catch {
+        setMatches([]);
+      } finally {
+        setResolving(false);
+      }
+    }, 350),
+    [onResolve]
+  );
+
+  useEffect(() => { resolve(cMake, cModel, cYear); }, [cMake, cModel, cYear, resolve]);
+
+  const noMatch = matches !== null && matches.length === 0 && cYear.length === 4;
+
+  return (
+    <div className="space-y-3">
+      {/* Step 1 — Make */}
+      <div>
+        <label className="text-xs text-ink/50 mb-1 block">Make</label>
+        <div className="relative">
+          <select
+            value={cMake}
+            onChange={(e) => setCMake(e.target.value)}
+            className="input-field w-full appearance-none pr-8"
+          >
+            <option value="">Select make…</option>
+            {makes.map((mk) => <option key={mk} value={mk}>{mk}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Step 2 — Model */}
+      {cMake && (
+        <div>
+          <label className="text-xs text-ink/50 mb-1 block">Model</label>
+          <div className="relative">
+            <select
+              value={cModel}
+              onChange={(e) => setCModel(e.target.value)}
+              className="input-field w-full appearance-none pr-8"
+            >
+              <option value="">Select model…</option>
+              {cModels.map((mo) => <option key={mo} value={mo}>{mo}</option>)}
+            </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {/* Step 3 — Year (resolves generation) */}
+      {cMake && cModel && (
+        <div>
+          <label className="text-xs text-ink/50 mb-1 block">Year</label>
+          <input
+            type="number"
+            value={cYear}
+            onChange={(e) => setCYear(e.target.value)}
+            placeholder="e.g. 1992"
+            min={1885}
+            max={new Date().getFullYear() + 2}
+            className={`input-field w-full ${noMatch ? "ring-2 ring-red-400/40" : ""}`}
+          />
+        </div>
+      )}
+
+      {resolving && <p className="text-xs text-ink/40">Resolving generation…</p>}
+
+      {noMatch && !resolving && (
+        <p className="text-xs text-red-400">
+          {cYear} isn&apos;t in the catalog for {cMake} {cModel}. Use &ldquo;Add it manually&rdquo; below.
+        </p>
+      )}
+
+      {/* Multiple generations — user picks */}
+      {!resolving && matches && matches.length > 1 && (
+        <div>
+          <p className="text-xs text-ink/50 mb-2">Multiple generations match — pick yours:</p>
+          <div className="space-y-1.5">
+            {matches.map((m, i) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => { setPickIdx(i); onResolve(m, cYear); }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
+                  pickIdx === i
+                    ? "border-orange bg-orange/5 text-orange"
+                    : "border-card text-ink/60 hover:border-ink/20"
+                }`}
+              >
+                <span className="font-medium">
+                  {m.generation}
+                  {m.chassis_code && m.chassis_code !== m.generation && (
+                    <span className="text-ink/40 font-normal ml-1.5">({m.chassis_code})</span>
+                  )}
+                </span>
+                <span className="text-xs text-ink/40">{yearLabel(m)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Main form ─────────────────────────────────────────────────────────────────
@@ -27,65 +175,101 @@ function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number)
 export function AddCarForm({ userId }: { userId: string }) {
   const [state, action, pending] = useActionState<CarState, FormData>(createCar, null);
 
-  // Shared model state — set by either search or browse
+  // Model resolution state
   const [selectedModel, setSelectedModel] = useState<CarModel | null>(null);
+  const [finalYear, setFinalYear] = useState("");      // submitted to form
+  const [yearInput, setYearInput] = useState("");       // controlled input (search path)
+  const [selectedEngine, setSelectedEngine] = useState("");
   const [manualMode, setManualMode] = useState(false);
+  const [cascadeKey, setCascadeKey] = useState(0);     // force remount on clear
 
-  // Search path
-  const [query, setQuery] = useState("");
+  // Search (secondary path)
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<CarModel[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
+  // Other form state
   const [isPrivate, setIsPrivate] = useState(false);
   const [purchasePricePublic, setPurchasePricePublic] = useState(false);
   const [currency, setCurrency] = useState("EUR");
-
   const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY"];
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const search = useCallback(
+  // Search debounce — race-safe: no showDropdown boolean, results drive visibility
+  const doSearch = useCallback(
     debounce(async (q: string) => {
       if (q.length < 2) { setSearchResults([]); return; }
-      const res = await fetch(`/api/car-models?q=${encodeURIComponent(q)}`);
-      if (res.ok) setSearchResults(await res.json());
+      try {
+        const res = await fetch(`/api/car-models?q=${encodeURIComponent(q)}`);
+        if (res.ok) setSearchResults(await res.json());
+        else setSearchResults([]);
+      } catch {
+        setSearchResults([]);
+      }
     }, 300),
     []
   );
 
-  useEffect(() => { search(query); }, [query, search]);
+  useEffect(() => { doSearch(searchQuery); }, [searchQuery, doSearch]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  function selectFromSearch(m: CarModel) {
-    setSelectedModel(m);
-    setQuery(`${m.make} ${m.model} ${m.generation}`);
+  // Cascade resolves: both model and year are known
+  const handleCascadeResolve = useCallback((model: CarModel, year: string) => {
+    setSelectedModel(model);
+    setFinalYear(year);
+    setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
+  }, []);
+
+  // Search resolves: model is known, year still needed
+  function handleSearchSelect(model: CarModel) {
+    setSelectedModel(model);
+    setFinalYear("");
+    setYearInput("");
+    setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
+    setSearchQuery("");
     setSearchResults([]);
-    setShowDropdown(false);
   }
 
-  function clearSelection() {
+  function handleClear() {
     setSelectedModel(null);
-    setQuery("");
+    setFinalYear("");
+    setYearInput("");
+    setSelectedEngine("");
+    setCascadeKey((k) => k + 1);
+    setSearchQuery("");
     setSearchResults([]);
+  }
+
+  function handleYearInput(val: string) {
+    setYearInput(val);
+    const yr = parseInt(val, 10);
+    if (!isNaN(yr) && yr >= 1885 && yr <= new Date().getFullYear() + 2) {
+      setFinalYear(val);
+    } else {
+      setFinalYear("");
+    }
   }
 
   async function handlePhotos(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    setUploadError(null);
     const supabase = createClient();
     const tempId = crypto.randomUUID();
     const uploaded: UploadedPhoto[] = [];
+    let failed = 0;
     for (const file of Array.from(files)) {
       try {
         const compressed = await imageCompression(file, {
@@ -95,9 +279,19 @@ export function AddCarForm({ userId }: { userId: string }) {
         const path = `${userId}/${tempId}/${webpFile.name}`;
         const { error } = await supabase.storage.from("car-photos").upload(path, webpFile);
         if (!error) uploaded.push({ path, previewUrl: URL.createObjectURL(webpFile) });
-      } catch { /* skip */ }
+        else failed++;
+      } catch {
+        failed++;
+      }
     }
     setPhotos((prev) => [...prev, ...uploaded]);
+    if (failed > 0) {
+      setUploadError(
+        failed === files.length
+          ? "Photos couldn't be uploaded — check your connection and try again."
+          : `${failed} of ${files.length} photos failed to upload.`
+      );
+    }
     setUploading(false);
   }
 
@@ -105,15 +299,24 @@ export function AddCarForm({ userId }: { userId: string }) {
     setPhotos((prev) => prev.filter((p) => p.path !== path));
   }
 
-  const displayMake = selectedModel?.make ?? "";
-  const displayModel = selectedModel ? `${selectedModel.model} ${selectedModel.generation}` : "";
+  // True when a model is confirmed via search but the user hasn't entered their year yet
+  const needsYear = selectedModel !== null && !finalYear && !manualMode;
 
   return (
     <form action={action} className="space-y-8 pb-24">
-      {/* Hidden model fields */}
+      {/* ── Hidden fields ── */}
       <input type="hidden" name="model_id" value={selectedModel?.id ?? ""} />
-      <input type="hidden" name="display_make" value={displayMake} />
-      <input type="hidden" name="display_model" value={displayModel} />
+      <input type="hidden" name="display_make" value={selectedModel?.make ?? ""} />
+      <input type="hidden" name="display_model" value={
+        selectedModel ? `${selectedModel.model} ${selectedModel.generation}` : ""
+      } />
+      {/* Year + engine hidden inputs — only in catalog mode (manual mode uses visible inputs) */}
+      {selectedModel && !manualMode && (
+        <>
+          <input type="hidden" name="year" value={finalYear} />
+          <input type="hidden" name="engine" value={selectedEngine} />
+        </>
+      )}
       {photos.map((p, i) => (
         <input key={p.path} type="hidden"
           name={i === 0 ? "cover_photo_path" : `photo_path_${i}`}
@@ -124,62 +327,117 @@ export function AddCarForm({ userId }: { userId: string }) {
       <section className="space-y-4">
         <h2 className="font-display font-bold text-lg">Find your car</h2>
 
-        {/* Selected model confirmation banner */}
+        {/* ── Confirmed state ── */}
         {selectedModel && !manualMode && (
-          <div className="flex items-center justify-between bg-orange/8 border border-orange/20 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Check size={15} className="text-orange flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="font-medium text-sm leading-tight truncate">
-                  {selectedModel.make} {selectedModel.model} {selectedModel.generation}
-                </p>
-                <p className="text-xs text-ink/40">{yearLabel(selectedModel)}</p>
+          <div className="space-y-4">
+            {/* Confirmation banner */}
+            <div className="flex items-center justify-between bg-orange/8 border border-orange/20 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Check size={15} className="text-orange flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-sm leading-tight">
+                    {selectedModel.make} {selectedModel.model}{" "}
+                    <span className="text-ink/60">{selectedModel.generation}</span>
+                    {selectedModel.chassis_code && selectedModel.chassis_code !== selectedModel.generation && (
+                      <span className="text-ink/40 font-normal ml-1">({selectedModel.chassis_code})</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-ink/40">
+                    {yearLabel(selectedModel)}
+                    {finalYear && (
+                      <span className="ml-1.5 text-ink/60 font-medium">· {finalYear}</span>
+                    )}
+                  </p>
+                </div>
               </div>
+              <button type="button" onClick={handleClear}
+                className="text-ink/30 hover:text-ink/60 ml-3 flex-shrink-0">
+                <X size={14} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="text-ink/30 hover:text-ink/60 ml-3 flex-shrink-0"
-            >
-              <X size={14} />
-            </button>
+
+            {/* Step 3b — Year (search path only: model known, year not yet) */}
+            {needsYear && (
+              <div>
+                <label className="text-xs text-ink/50 mb-1 block">Your car&apos;s year *</label>
+                <input
+                  type="number"
+                  value={yearInput}
+                  onChange={(e) => handleYearInput(e.target.value)}
+                  placeholder={`${selectedModel.year_start}–${selectedModel.year_end ?? "present"}`}
+                  min={1885}
+                  max={new Date().getFullYear() + 2}
+                  className="input-field w-full"
+                  autoFocus
+                />
+                <p className="text-xs text-ink/30 mt-1">
+                  Generation range: {yearLabel(selectedModel)}
+                </p>
+              </div>
+            )}
+
+            {/* Step 4 — Engine (shown once year is known) */}
+            {finalYear && (
+              <div>
+                <label className="text-xs text-ink/50 mb-1 block">Engine</label>
+                {selectedModel.engines.length > 0 ? (
+                  <div className="relative">
+                    <select
+                      value={selectedEngine}
+                      onChange={(e) => setSelectedEngine(e.target.value)}
+                      className="input-field w-full appearance-none pr-8"
+                    >
+                      <option value="">Select engine… (optional)</option>
+                      {selectedModel.engines.map((eng) => (
+                        <option key={eng} value={eng}>{eng}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                  </div>
+                ) : (
+                  <input
+                    value={selectedEngine}
+                    onChange={(e) => setSelectedEngine(e.target.value)}
+                    placeholder="e.g. M20B25 (optional)"
+                    className="input-field w-full"
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {!manualMode && (
+        {/* ── Finding state: search + cascade ── */}
+        {!selectedModel && !manualMode && (
           <>
-            {/* Path A: Smart search */}
-            <div ref={dropdownRef} className="relative">
+            {/* Search — secondary path */}
+            <div ref={searchRef} className="relative">
               <div className="relative">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Type chassis code, model name… (E30, Miata, GTI)"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setShowDropdown(true);
-                    if (!e.target.value) clearSelection();
-                  }}
-                  onFocus={() => { if (query.length >= 2) setShowDropdown(true); }}
+                  placeholder="Know your chassis? Type E30, S13, Miata…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-9 py-3 bg-card rounded-xl text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-orange/40"
                   autoComplete="off"
                 />
-                {query && (
-                  <button type="button" onClick={clearSelection}
+                {searchQuery && (
+                  <button type="button"
+                    onClick={() => { setSearchQuery(""); setSearchResults([]); }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60">
                     <X size={14} />
                   </button>
                 )}
               </div>
 
-              {showDropdown && searchResults.length > 0 && (
+              {searchResults.length > 0 && (
                 <ul className="absolute z-20 mt-1 w-full bg-white border border-card rounded-xl shadow-lg overflow-hidden">
                   {searchResults.map((m) => (
                     <li key={m.id}>
                       <button
                         type="button"
-                        onMouseDown={() => selectFromSearch(m)}
+                        onMouseDown={() => handleSearchSelect(m)}
                         className="w-full text-left px-4 py-3 hover:bg-background text-sm flex items-center justify-between gap-3"
                       >
                         <span>
@@ -202,28 +460,25 @@ export function AddCarForm({ userId }: { userId: string }) {
             {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-card" />
-              <span className="text-xs text-ink/30">or browse by make</span>
+              <span className="text-xs text-ink/30">or select step by step</span>
               <div className="flex-1 h-px bg-card" />
             </div>
 
-            {/* Path B: Cascading picker */}
-            <BrowsePicker
-              onSelect={(m) => { setSelectedModel(m); setQuery(""); }}
-              disabled={!!selectedModel}
-            />
+            {/* Cascade — primary path */}
+            <CascadePicker key={cascadeKey} onResolve={handleCascadeResolve} />
 
             {/* Manual fallback */}
             <button
               type="button"
-              onClick={() => { setManualMode(true); clearSelection(); }}
+              onClick={() => { setManualMode(true); handleClear(); }}
               className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
             >
-              Can't find it? Add it manually
+              Can&apos;t find it? Add it manually
             </button>
           </>
         )}
 
-        {/* Manual entry */}
+        {/* ── Manual entry ── */}
         {manualMode && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -255,36 +510,27 @@ export function AddCarForm({ userId }: { userId: string }) {
       <section>
         <h2 className="font-display font-bold text-lg mb-4">Details</h2>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Year *</label>
-              <input
-                name="year"
-                type="number"
-                required
-                placeholder="1992"
-                min={1885}
-                max={new Date().getFullYear() + 2}
-                className="input-field w-full"
-              />
+          {/* Year + Engine — only in manual mode; cascade/search capture them above */}
+          {manualMode && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-ink/50 mb-1 block">Year *</label>
+                <input
+                  name="year"
+                  type="number"
+                  required
+                  placeholder="1992"
+                  min={1885}
+                  max={new Date().getFullYear() + 2}
+                  className="input-field w-full"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-ink/50 mb-1 block">Engine</label>
+                <input name="engine" placeholder="M20B25" className="input-field w-full" />
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Engine</label>
-              <input
-                name="engine"
-                list="engine-options"
-                placeholder={selectedModel?.engines[0] ?? "M20B25"}
-                className="input-field w-full"
-              />
-              {selectedModel && selectedModel.engines.length > 0 && (
-                <datalist id="engine-options">
-                  {selectedModel.engines.map((e) => (
-                    <option key={e} value={e} />
-                  ))}
-                </datalist>
-              )}
-            </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -365,6 +611,9 @@ export function AddCarForm({ userId }: { userId: string }) {
         </button>
         <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only"
           onChange={(e) => handlePhotos(e.target.files)} />
+        {uploadError && (
+          <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
+        )}
       </section>
 
       {/* ── Section 4: Purchase details ── */}

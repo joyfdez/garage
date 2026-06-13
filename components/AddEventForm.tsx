@@ -27,14 +27,17 @@ export function AddEventForm({
   const [type, setType] = useState<EventType>("build");
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handlePhotos(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    setUploadError(null);
     const supabase = createClient();
     const tempId = crypto.randomUUID();
     const uploaded: UploadedPhoto[] = [];
+    let failed = 0;
 
     for (const file of Array.from(files)) {
       try {
@@ -55,13 +58,22 @@ export function AddEventForm({
           .upload(path, webpFile);
         if (!error) {
           uploaded.push({ path, previewUrl: URL.createObjectURL(webpFile) });
+        } else {
+          failed++;
         }
       } catch {
-        // skip failed uploads
+        failed++;
       }
     }
 
     setPhotos((prev) => [...prev, ...uploaded]);
+    if (failed > 0) {
+      setUploadError(
+        failed === files.length
+          ? "Photos couldn't be uploaded — check your connection and try again."
+          : `${failed} of ${files.length} photos failed to upload.`
+      );
+    }
     setUploading(false);
   }
 
@@ -243,6 +255,9 @@ export function AddEventForm({
           className="sr-only"
           onChange={(e) => handlePhotos(e.target.files)}
         />
+        {uploadError && (
+          <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
+        )}
       </div>
 
       {/* Error */}
