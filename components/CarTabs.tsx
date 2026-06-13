@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Wrench, Hammer, Clock, Images, Plus, Calendar } from "lucide-react";
+import { Clock, Plus } from "lucide-react";
 import { PhotoGallery } from "@/components/PhotoGallery";
 
 type EventType = "build" | "fix";
@@ -34,187 +34,228 @@ interface CarTabsProps {
 type Tab = "timeline" | "mods" | "fixes" | "gallery";
 
 const TYPE_LABELS: Record<EventType, string> = {
-  build: "Build",
-  fix: "Fix",
+  build: "MOD",
+  fix: "FIX",
 };
 
-function EventCard({ event, carSlug, supabaseUrl }: { event: CarEvent; carSlug: string; supabaseUrl: string }) {
-  const isFix = event.type === "fix";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "timeline", label: "Timeline" },
+  { id: "mods",     label: "Mods" },
+  { id: "fixes",    label: "Fixes" },
+  { id: "gallery",  label: "Gallery" },
+];
+
+function formatEventDate(d: string) {
+  return new Date(d)
+    .toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    .toUpperCase();
+}
+
+// ── Event card — editorial, photo-first ──────────────────────────────────────
+
+function EventCard({
+  event,
+  carSlug,
+  supabaseUrl,
+  index,
+}: {
+  event: CarEvent;
+  carSlug: string;
+  supabaseUrl: string;
+  index: number;
+}) {
   const coverPhoto = event.photos[0];
+  const isFix = event.type === "fix";
 
   return (
-    <Link href={`/car/${carSlug}/events/${event.id}`} className="block group">
-    <div className="bg-card rounded-2xl overflow-hidden group-hover:ring-2 group-hover:ring-orange/20 transition-shadow">
-      {coverPhoto && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={`${supabaseUrl}/storage/v1/object/public/car-photos/${coverPhoto.storage_path}`}
-          alt={event.title}
-          className="w-full aspect-[16/9] object-cover"
-        />
-      )}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-              event.type === "build"
-                ? "bg-orange/10 text-orange"
-                : event.type === "fix"
-                ? "bg-ink/8 text-ink/60"
-                : "bg-ink/8 text-ink/60"
-            }`}
-          >
-            {TYPE_LABELS[event.type]}
-          </span>
-          <span className="text-xs text-ink/30 flex items-center gap-1">
-            <Calendar size={11} />
-            {new Date(event.event_date).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-        </div>
+    <Link
+      href={`/car/${carSlug}/events/${event.id}`}
+      className="block group fade-rise"
+      style={{ "--rise-delay": `${index * 60}ms` } as React.CSSProperties}
+    >
+      <article>
+        {/* Photo — 4:3, rounded top, image scales on hover */}
+        {coverPhoto && (
+          <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${supabaseUrl}/storage/v1/object/public/car-photos/${coverPhoto.storage_path}`}
+              alt={event.title}
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+            />
+          </div>
+        )}
 
-        <h3 className="font-display font-bold text-base leading-snug mb-2">{event.title}</h3>
+        {/* No-photo card — bordered box */}
+        {!coverPhoto && (
+          <div className="rounded-card border border-ink/8 bg-white mb-3 p-4">
+            {/* Metadata inside no-photo card */}
+            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
+              <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
+                {TYPE_LABELS[event.type]}
+              </span>
+              <span className="text-hint mx-1.5">·</span>
+              {formatEventDate(event.event_date)}
+            </p>
 
-        {isFix && event.details && (
-          <div className="space-y-2 text-sm">
-            {event.details.problem && (
-              <div>
-                <span className="text-xs uppercase tracking-wide text-ink/30 font-medium">Problem</span>
-                <p className="text-ink/70 mt-0.5">{event.details.problem}</p>
-              </div>
+            <h3 className="font-display font-bold text-xl leading-tight text-ink">
+              {event.title}
+            </h3>
+
+            {isFix && event.details?.problem && (
+              <p className="text-ink-muted text-sm mt-2 line-clamp-2">{event.details.problem}</p>
             )}
-            {event.details.solution && (
-              <div>
-                <span className="text-xs uppercase tracking-wide text-ink/30 font-medium">Solution</span>
-                <p className="text-ink/70 mt-0.5">{event.details.solution}</p>
-              </div>
+            {!isFix && event.description && (
+              <p className="text-ink-muted text-sm mt-2 line-clamp-2">{event.description}</p>
             )}
           </div>
         )}
 
-        {!isFix && event.description && (
-          <p className="text-sm text-ink/70 line-clamp-3">{event.description}</p>
+        {/* Below-photo text (only when photo exists) */}
+        {coverPhoto && (
+          <>
+            {/* Metadata line — uppercase, spaced */}
+            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-2">
+              <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
+                {TYPE_LABELS[event.type]}
+              </span>
+              <span className="text-hint/60">·</span>
+              {formatEventDate(event.event_date)}
+            </p>
+
+            {/* Title — Archivo, large */}
+            <h3 className="font-display font-bold text-xl leading-tight text-ink group-hover:text-green-bright transition-colors">
+              {event.title}
+            </h3>
+
+            {isFix && event.details?.problem && (
+              <p className="text-ink-muted text-sm mt-1 line-clamp-2">{event.details.problem}</p>
+            )}
+            {!isFix && event.description && (
+              <p className="text-ink-muted text-sm mt-1 line-clamp-2">{event.description}</p>
+            )}
+          </>
         )}
-      </div>
-    </div>
+      </article>
     </Link>
   );
 }
 
-function EmptyTimeline({ carSlug, isOwner }: { carSlug: string; isOwner: boolean }) {
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean }) {
   return (
     <div className="py-16 text-center">
-      <Clock size={32} className="text-ink/15 mx-auto mb-3" />
-      <p className="font-display font-bold text-base mb-1">No entries yet</p>
+      <Clock size={28} className="text-hint mx-auto mb-3" />
+      <p className="font-display font-bold text-base mb-1 text-ink">No entries yet</p>
       {isOwner ? (
         <>
-          <p className="text-ink/40 text-sm mb-6">This car's story starts here.</p>
+          <p className="text-ink-muted text-sm mb-6">This car&apos;s story starts here.</p>
           <Link
             href={`/car/${carSlug}/events/new`}
-            className="inline-flex items-center gap-2 bg-orange text-white font-display font-bold px-5 py-2.5 rounded-2xl hover:bg-orange-600 transition-colors text-sm"
+            className="inline-flex items-center gap-2 bg-ink text-paper font-display font-bold px-5 py-2.5 rounded-card text-sm hover:bg-ink/85 transition-colors"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             Add your first update
           </Link>
         </>
       ) : (
-        <p className="text-ink/40 text-sm">Check back later.</p>
+        <p className="text-ink-muted text-sm">Check back later.</p>
       )}
     </div>
   );
 }
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "timeline", label: "Timeline", icon: Clock },
-  { id: "mods", label: "Mods", icon: Hammer },
-  { id: "fixes", label: "Fixes", icon: Wrench },
-  { id: "gallery", label: "Gallery", icon: Images },
-];
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 
 export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl }: CarTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
 
   const buildEvents = events.filter((e) => e.type === "build");
-  const fixEvents = events.filter((e) => e.type === "fix");
-  const galleryPhotos = photos.map((p) => ({ id: p.id, storage_path: p.storage_path }));
+  const fixEvents   = events.filter((e) => e.type === "fix");
+  const galleryPics = photos.map((p) => ({ id: p.id, storage_path: p.storage_path }));
+
+  const activeIndex = TABS.findIndex((t) => t.id === activeTab);
 
   return (
     <div>
-      {/* Tab bar */}
-      <div className="sticky top-0 z-10 bg-background border-b border-card">
-        <div className="flex overflow-x-auto scrollbar-hide">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === id
-                  ? "border-orange text-orange"
-                  : "border-transparent text-ink/40 hover:text-ink/70"
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-              {id === "mods" && buildEvents.length > 0 && (
-                <span className="text-xs bg-card rounded-full px-1.5 py-0.5 text-ink/50 ml-1">{buildEvents.length}</span>
-              )}
-              {id === "fixes" && fixEvents.length > 0 && (
-                <span className="text-xs bg-card rounded-full px-1.5 py-0.5 text-ink/50 ml-1">{fixEvents.length}</span>
-              )}
-            </button>
-          ))}
+      {/* ── Tab bar — equal-width, sliding green underline ── */}
+      <div className="sticky top-0 z-10 bg-paper/90 backdrop-blur-sm border-b border-ink/8">
+        <div className="relative flex">
+          {TABS.map(({ id, label }, i) => {
+            const count =
+              id === "mods" ? buildEvents.length
+              : id === "fixes" ? fixEvents.length
+              : null;
+
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold whitespace-nowrap transition-colors ${
+                  activeTab === id ? "text-ink" : "text-hint hover:text-ink-muted"
+                }`}
+              >
+                {label}
+                {count !== null && count > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    activeTab === id
+                      ? "bg-ink/8 text-ink-muted"
+                      : "bg-ink/5 text-hint"
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Sliding underline — moves via CSS transform */}
+          <div
+            className="absolute bottom-0 left-0 h-[2px] bg-green-bright"
+            style={{
+              width: "25%",
+              transform: `translateX(${activeIndex * 100}%)`,
+              transition: "transform 220ms cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          />
         </div>
       </div>
 
-      {/* Tab content */}
-      <div className="px-4 py-4">
+      {/* ── Tab content ── */}
+      <div className="px-4 py-5">
         {activeTab === "timeline" && (
-          <>
-            {events.length === 0 ? (
-              <EmptyTimeline carSlug={carSlug} isOwner={isOwner} />
-            ) : (
-              <div className="space-y-4">
-                {events.map((e) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} />
+          events.length === 0
+            ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
+            : <div className="space-y-8">
+                {events.map((e, i) => (
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
                 ))}
               </div>
-            )}
-          </>
         )}
 
         {activeTab === "mods" && (
-          <>
-            {buildEvents.length === 0 ? (
-              <EmptyTimeline carSlug={carSlug} isOwner={isOwner} />
-            ) : (
-              <div className="space-y-4">
-                {buildEvents.map((e) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} />
+          buildEvents.length === 0
+            ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
+            : <div className="space-y-8">
+                {buildEvents.map((e, i) => (
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
                 ))}
               </div>
-            )}
-          </>
         )}
 
         {activeTab === "fixes" && (
-          <>
-            {fixEvents.length === 0 ? (
-              <EmptyTimeline carSlug={carSlug} isOwner={isOwner} />
-            ) : (
-              <div className="space-y-4">
-                {fixEvents.map((e) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} />
+          fixEvents.length === 0
+            ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
+            : <div className="space-y-8">
+                {fixEvents.map((e, i) => (
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
                 ))}
               </div>
-            )}
-          </>
         )}
 
         {activeTab === "gallery" && (
-          <PhotoGallery photos={galleryPhotos} supabaseUrl={supabaseUrl} />
+          <PhotoGallery photos={galleryPics} supabaseUrl={supabaseUrl} />
         )}
       </div>
     </div>
