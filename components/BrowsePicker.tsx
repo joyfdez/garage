@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
-import { debounce } from "@/lib/utils/debounce";
 
 export interface CarModel {
   id: string;
@@ -27,14 +26,17 @@ export function BrowsePicker({
   onSelect: (m: CarModel) => void;
   disabled: boolean;
 }) {
-  const [makes, setMakes] = useState<string[]>([]);
-  const [make, setMake] = useState("");
-  const [models, setModels] = useState<string[]>([]);
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState("");
-  const [matches, setMatches] = useState<CarModel[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [makes, setMakes]       = useState<string[]>([]);
+  const [make, setMake]         = useState("");
+  const [models, setModels]     = useState<string[]>([]);
+  const [model, setModel]       = useState("");
+  const [generations, setGens]  = useState<CarModel[] | null>(null);
+  const [fetching, setFetching] = useState(false);
+  const [pickedIdx, setPickedIdx] = useState(0);
+
+  // stable ref so the fetch effect doesn't re-run when onSelect identity changes
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   useEffect(() => {
     fetch("/api/car-models/makes")
@@ -45,8 +47,7 @@ export function BrowsePicker({
 
   useEffect(() => {
     setModel("");
-    setYear("");
-    setMatches(null);
+    setGens(null);
     if (!make) { setModels([]); return; }
     fetch(`/api/car-models/models?make=${encodeURIComponent(make)}`)
       .then((r) => r.json())
@@ -55,43 +56,25 @@ export function BrowsePicker({
   }, [make]);
 
   useEffect(() => {
-    setYear("");
-    setMatches(null);
-  }, [model]);
-
-  const resolve = useCallback(
-    debounce(async (m: string, mod: string, y: string) => {
-      const yr = parseInt(y, 10);
-      if (!m || !mod || isNaN(yr) || yr < 1885 || yr > new Date().getFullYear() + 2) {
-        setMatches(null);
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `/api/car-models/resolve?make=${encodeURIComponent(m)}&model=${encodeURIComponent(mod)}&year=${yr}`
-        );
-        const data: CarModel[] = await res.json();
-        setMatches(data);
-        setSelectedIdx(0);
-        if (data.length === 1) onSelect(data[0]);
-      } catch {
-        setMatches([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 350),
-    [onSelect]
-  );
-
-  useEffect(() => {
-    resolve(make, model, year);
-  }, [make, model, year, resolve]);
-
-  const outOfRange = matches !== null && matches.length === 0 && year.length === 4;
+    setGens(null);
+    setPickedIdx(0);
+    if (!make || !model) return;
+    setFetching(true);
+    fetch(
+      `/api/car-models/generations?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`
+    )
+      .then((r) => r.json())
+      .then((data: CarModel[]) => {
+        setGens(data);
+        if (data.length === 1) onSelectRef.current(data[0]);
+      })
+      .catch(() => setGens([]))
+      .finally(() => setFetching(false));
+  }, [make, model]);
 
   return (
     <div className={`space-y-3 transition-opacity ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
+      {/* Make */}
       <div>
         <label className="text-xs text-ink/50 mb-1 block">Make</label>
         <div className="relative">
@@ -109,6 +92,7 @@ export function BrowsePicker({
         </div>
       </div>
 
+      {/* Model */}
       {make && (
         <div>
           <label className="text-xs text-ink/50 mb-1 block">Model</label>
@@ -128,55 +112,56 @@ export function BrowsePicker({
         </div>
       )}
 
+      {/* Generation */}
       {make && model && (
-        <div>
-          <label className="text-xs text-ink/50 mb-1 block">Year</label>
-          <input
-            type="number"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            placeholder="e.g. 1992"
-            min={1885}
-            max={new Date().getFullYear() + 2}
-            className={`input-field w-full ${outOfRange ? "ring-2 ring-red-400/40" : ""}`}
-          />
-        </div>
-      )}
+        <>
+          {fetching && (
+            <p className="text-xs text-ink/40">Loading generations…</p>
+          )}
 
-      {loading && <p className="text-xs text-ink/40">Resolving generation…</p>}
+          {!fetching && generations !== null && generations.length === 0 && (
+            <p className="text-xs text-red-400">
+              No catalog entries found for {make} {model}.
+            </p>
+          )}
 
-      {outOfRange && !loading && (
-        <p className="text-xs text-red-400">
-          {year} is outside the range for {make} {model} in the catalog.
-        </p>
-      )}
+          {!fetching && generations !== null && generations.length === 1 && (
+            <p className="text-xs text-ink/40">
+              {generations[0].generation} · {yearLabel(generations[0])}
+            </p>
+          )}
 
-      {!loading && matches && matches.length > 1 && (
-        <div>
-          <p className="text-xs text-ink/50 mb-2">Multiple generations match — pick yours:</p>
-          <div className="space-y-1.5">
-            {matches.map((m, i) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => { setSelectedIdx(i); onSelect(m); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
-                  selectedIdx === i
-                    ? "border-racing-green bg-racing-green/5 text-racing-green"
-                    : "border-card text-ink/60 hover:border-ink/20"
-                }`}
-              >
-                <span className="font-medium">
-                  {m.generation}
-                  {m.chassis_code && m.chassis_code !== m.generation && (
-                    <span className="text-ink/40 font-normal ml-1.5">({m.chassis_code})</span>
-                  )}
-                </span>
-                <span className="text-xs text-ink/40">{yearLabel(m)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+          {!fetching && generations !== null && generations.length > 1 && (
+            <div>
+              <p className="text-xs text-ink/50 mb-2">Pick your generation:</p>
+              <div className="space-y-1.5">
+                {generations.map((g, i) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setPickedIdx(i);
+                      onSelectRef.current(g);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
+                      pickedIdx === i
+                        ? "border-racing-green bg-racing-green/5 text-racing-green"
+                        : "border-card text-ink/60 hover:border-ink/20"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {g.generation}
+                      {g.chassis_code && g.chassis_code !== g.generation && (
+                        <span className="text-ink/40 font-normal ml-1.5">({g.chassis_code})</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-ink/40">{yearLabel(g)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

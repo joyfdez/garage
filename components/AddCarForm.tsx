@@ -29,62 +29,47 @@ function CascadePicker({
 }: {
   onResolve: (model: CarModel, year: string) => void;
 }) {
-  const [makes, setMakes] = useState<string[]>([]);
-  const [cMake, setCMake] = useState("");
-  const [cModels, setCModels] = useState<string[]>([]);
-  const [cModel, setCModel] = useState("");
-  const [cYear, setCYear] = useState("");
-  const [resolving, setResolving] = useState(false);
-  const [matches, setMatches] = useState<CarModel[] | null>(null);
-  const [pickIdx, setPickIdx] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
+  const [makes, setMakes]         = useState<string[]>([]);
+  const [cMake, setCMake]         = useState("");
+  const [cModels, setCModels]     = useState<string[]>([]);
+  const [cModel, setCModel]       = useState("");
+  const [generations, setGens]    = useState<CarModel[] | null>(null);
+  const [fetching, setFetching]   = useState(false);
+  const [pickIdx, setPickIdx]     = useState(0);
+
+  // stable ref so the effect doesn't re-run when the callback identity changes
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
 
   useEffect(() => {
     fetch("/api/car-models/makes").then((r) => r.json()).then(setMakes).catch(() => {});
   }, []);
 
   useEffect(() => {
-    setCModel(""); setCYear(""); setMatches(null);
+    setCModel(""); setGens(null);
     if (!cMake) { setCModels([]); return; }
     fetch(`/api/car-models/models?make=${encodeURIComponent(cMake)}`)
       .then((r) => r.json()).then(setCModels).catch(() => {});
   }, [cMake]);
 
-  useEffect(() => { setCYear(""); setMatches(null); }, [cModel]);
-
-  const resolve = useCallback(
-    debounce(async (make: string, model: string, y: string) => {
-      const yr = parseInt(y, 10);
-      if (!make || !model || isNaN(yr) || yr < 1885 || yr > new Date().getFullYear() + 2) {
-        setMatches(null);
-        setResolving(false); // always clear spinner for invalid/incomplete input
-        return;
-      }
-      // Cancel any in-flight request so stale results never overwrite fresh ones
-      abortRef.current?.abort();
-      abortRef.current = new AbortController();
-      setResolving(true);
-      try {
-        const res = await fetch(
-          `/api/car-models/resolve?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${yr}`,
-          { signal: abortRef.current.signal }
-        );
-        const data: CarModel[] = await res.json();
-        setMatches(data);
-        setPickIdx(0);
-        if (data.length === 1) onResolve(data[0], y);
-      } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") setMatches([]);
-      } finally {
-        setResolving(false);
-      }
-    }, 350),
-    [onResolve]
-  );
-
-  useEffect(() => { resolve(cMake, cModel, cYear); }, [cMake, cModel, cYear, resolve]);
-
-  const noMatch = matches !== null && matches.length === 0 && cYear.length === 4;
+  useEffect(() => {
+    setGens(null);
+    setPickIdx(0);
+    if (!cMake || !cModel) return;
+    setFetching(true);
+    fetch(
+      `/api/car-models/generations?make=${encodeURIComponent(cMake)}&model=${encodeURIComponent(cModel)}`
+    )
+      .then((r) => r.json())
+      .then((data: CarModel[]) => {
+        setGens(data);
+        if (data.length === 1) {
+          onResolveRef.current(data[0], String(data[0].year_start));
+        }
+      })
+      .catch(() => setGens([]))
+      .finally(() => setFetching(false));
+  }, [cMake, cModel]);
 
   return (
     <div className="space-y-3">
@@ -122,57 +107,50 @@ function CascadePicker({
         </div>
       )}
 
-      {/* Step 3 — Year (resolves generation) */}
+      {/* Step 3 — Generation (replaces blind year input) */}
       {cMake && cModel && (
-        <div>
-          <label className="text-xs text-ink/50 mb-1 block">Year</label>
-          <input
-            type="number"
-            value={cYear}
-            onChange={(e) => setCYear(e.target.value)}
-            placeholder="e.g. 1992"
-            min={1885}
-            max={new Date().getFullYear() + 2}
-            className={`input-field w-full ${noMatch ? "ring-2 ring-red-400/40" : ""}`}
-          />
-        </div>
-      )}
+        <>
+          {fetching && (
+            <p className="text-xs text-ink/40">Loading generations…</p>
+          )}
 
-      {resolving && <p className="text-xs text-ink/40">Resolving generation…</p>}
+          {!fetching && generations !== null && generations.length === 0 && (
+            <p className="text-xs text-red-400">
+              {cMake} {cModel} isn&apos;t in the catalog. Use &ldquo;Add it manually&rdquo; below.
+            </p>
+          )}
 
-      {noMatch && !resolving && (
-        <p className="text-xs text-red-400">
-          {cYear} isn&apos;t in the catalog for {cMake} {cModel}. Use &ldquo;Add it manually&rdquo; below.
-        </p>
-      )}
-
-      {/* Multiple generations — user picks */}
-      {!resolving && matches && matches.length > 1 && (
-        <div>
-          <p className="text-xs text-ink/50 mb-2">Multiple generations match — pick yours:</p>
-          <div className="space-y-1.5">
-            {matches.map((m, i) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => { setPickIdx(i); onResolve(m, cYear); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
-                  pickIdx === i
-                    ? "border-racing-green bg-racing-green/5 text-racing-green"
-                    : "border-card text-ink/60 hover:border-ink/20"
-                }`}
-              >
-                <span className="font-medium">
-                  {m.generation}
-                  {m.chassis_code && m.chassis_code !== m.generation && (
-                    <span className="text-ink/40 font-normal ml-1.5">({m.chassis_code})</span>
-                  )}
-                </span>
-                <span className="text-xs text-ink/40">{yearLabel(m)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+          {!fetching && generations !== null && generations.length > 1 && (
+            <div>
+              <p className="text-xs text-ink/50 mb-2">Pick your generation:</p>
+              <div className="space-y-1.5">
+                {generations.map((g, i) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setPickIdx(i);
+                      onResolveRef.current(g, String(g.year_start));
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
+                      pickIdx === i
+                        ? "border-racing-green bg-racing-green/5 text-racing-green"
+                        : "border-card text-ink/60 hover:border-ink/20"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {g.generation}
+                      {g.chassis_code && g.chassis_code !== g.generation && (
+                        <span className="text-ink/40 font-normal ml-1.5">({g.chassis_code})</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-ink/40">{yearLabel(g)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -245,10 +223,11 @@ export function AddCarForm({ userId }: { userId: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Cascade resolves: both model and year are known
+  // Cascade resolves: generation known, year pre-filled with year_start
   const handleCascadeResolve = useCallback((model: CarModel, year: string) => {
     setSelectedModel(model);
     setFinalYear(year);
+    setYearInput(year);
     setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
   }, []);
 
@@ -319,9 +298,6 @@ export function AddCarForm({ userId }: { userId: string }) {
     setPhotos((prev) => prev.filter((p) => p.path !== path));
   }
 
-  // True when a model is confirmed via search but the user hasn't entered their year yet
-  const needsYear = selectedModel !== null && !finalYear && !manualMode;
-
   return (
     <form action={action} className="space-y-8 pb-24">
       {/* ── Hidden fields ── */}
@@ -376,25 +352,23 @@ export function AddCarForm({ userId }: { userId: string }) {
               </button>
             </div>
 
-            {/* Step 3b — Year (search path only: model known, year not yet) */}
-            {needsYear && (
-              <div>
-                <label className="text-xs text-ink/50 mb-1 block">Your car&apos;s year *</label>
-                <input
-                  type="number"
-                  value={yearInput}
-                  onChange={(e) => handleYearInput(e.target.value)}
-                  placeholder={`${selectedModel.year_start}–${selectedModel.year_end ?? "present"}`}
-                  min={1885}
-                  max={new Date().getFullYear() + 2}
-                  className="input-field w-full"
-                  autoFocus
-                />
-                <p className="text-xs text-ink/30 mt-1">
-                  Generation range: {yearLabel(selectedModel)}
-                </p>
-              </div>
-            )}
+            {/* Year — always shown; pre-filled for cascade path, empty for search path */}
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Year *</label>
+              <input
+                type="number"
+                value={yearInput}
+                onChange={(e) => handleYearInput(e.target.value)}
+                placeholder={String(selectedModel.year_start)}
+                min={selectedModel.year_start}
+                max={selectedModel.year_end ?? new Date().getFullYear() + 2}
+                className="input-field w-full"
+                autoFocus={!yearInput}
+              />
+              <p className="text-xs text-ink/30 mt-1">
+                {selectedModel.generation}: {yearLabel(selectedModel)}
+              </p>
+            </div>
 
             {/* Step 4 — Engine (shown once year is known) */}
             {finalYear && (
