@@ -77,7 +77,11 @@ export function SettingsForm({
       const { error: upErr } = await supabase.storage
         .from("avatars")
         .upload(path, file, { upsert: true });
-      if (upErr) { setPhotoError("Upload failed."); return; }
+      if (upErr) {
+        console.error("[avatar upload] storage error:", upErr.message);
+        setPhotoError("Upload failed: " + upErr.message);
+        return;
+      }
 
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
       const urlWithBust = `${publicUrl}?t=${Date.now()}`;
@@ -86,6 +90,9 @@ export function SettingsForm({
       setAvatarUrl(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
+    } catch (err) {
+      console.error("[handleAvatarSave] unexpected error:", err);
+      setPhotoError("Unexpected error — check console.");
     } finally {
       setPhotoWorking(false);
     }
@@ -101,13 +108,20 @@ export function SettingsForm({
       const { error: upErr } = await supabase.storage
         .from("avatars")
         .upload(path, file, { upsert: true });
-      if (upErr) { setPhotoError("Upload failed."); return; }
+      if (upErr) {
+        console.error("[cover upload] storage error:", upErr.message);
+        setPhotoError("Upload failed: " + upErr.message);
+        return;
+      }
 
       const saveErr = await updateCoverPhotoPath(path);
       if (saveErr) { setPhotoError(saveErr); return; }
       setCoverPath(path);
       setCropSrc(null);
       setCropTarget(null);
+    } catch (err) {
+      console.error("[handleCoverSave] unexpected error:", err);
+      setPhotoError("Unexpected error — check console.");
     } finally {
       setPhotoWorking(false);
     }

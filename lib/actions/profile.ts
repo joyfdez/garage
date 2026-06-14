@@ -80,7 +80,14 @@ export async function updateAvatarUrl(avatarUrl: string): Promise<string | null>
     .from("profiles")
     .update({ avatar_url: avatarUrl })
     .eq("id", user.id);
-  return error ? "Failed to save avatar" : null;
+  if (error) {
+    console.error("[updateAvatarUrl] Supabase error:", error.code, error.message);
+    return "Failed to save avatar";
+  }
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/u", "layout");
+  return null;
 }
 
 export async function updateCoverPhotoPath(path: string): Promise<string | null> {
@@ -91,7 +98,14 @@ export async function updateCoverPhotoPath(path: string): Promise<string | null>
     .from("profiles")
     .update({ cover_photo_path: path })
     .eq("id", user.id);
-  return error ? "Failed to save cover" : null;
+  if (error) {
+    console.error("[updateCoverPhotoPath] Supabase error:", error.code, error.message);
+    return "Failed to save cover";
+  }
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/u", "layout");
+  return null;
 }
 
 export type PasswordState = { error?: string; success?: boolean } | null;
