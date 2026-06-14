@@ -306,7 +306,7 @@ export function EditCarForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-full bg-orange text-white font-display font-bold py-4 rounded-2xl text-base hover:bg-orange-600 transition-colors disabled:opacity-50"
+          className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save changes"}
         </button>
@@ -336,7 +336,7 @@ export function EditCarForm({
                 />
                 {/* Cover badge */}
                 {isCover && (
-                  <span className="absolute top-1.5 left-1.5 bg-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <span className="absolute top-1.5 left-1.5 bg-racing-green text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                     <Star size={8} fill="currentColor" />Cover
                   </span>
                 )}
@@ -370,10 +370,10 @@ export function EditCarForm({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="aspect-square rounded-xl border-2 border-dashed border-ink/15 flex flex-col items-center justify-center gap-1 text-ink/30 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50"
+            className="aspect-square rounded-xl border-2 border-dashed border-ink/15 flex flex-col items-center justify-center gap-1 text-ink/30 hover:border-racing-green/40 hover:text-racing-green transition-colors disabled:opacity-50"
           >
             {uploading ? (
-              <div className="w-5 h-5 border-2 border-ink/20 border-t-orange rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-ink/20 border-t-racing-green rounded-full animate-spin" />
             ) : (
               <>
                 <Camera size={20} />

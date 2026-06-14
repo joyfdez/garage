@@ -12,7 +12,7 @@ export function OnboardingForm({ hint }: { hint?: string }) {
       {/* Username */}
       <div>
         <label htmlFor="username" className="block text-xs font-medium text-ink/50 mb-1">
-          Username <span className="text-orange">*</span>
+          Username <span className="text-ink/50">*</span>
         </label>
         <div className="relative">
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30 text-sm select-none pointer-events-none">
@@ -30,7 +30,7 @@ export function OnboardingForm({ hint }: { hint?: string }) {
             pattern="[a-z0-9_]{2,30}"
             defaultValue={hint}
             placeholder="yourname"
-            className="w-full rounded-xl border border-card bg-white pl-8 pr-3.5 py-2.5 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+            className="w-full rounded-xl border border-card bg-white pl-8 pr-3.5 py-2.5 text-sm outline-none focus:border-racing-green/40 focus:ring-2 focus:ring-racing-green/10 transition"
           />
         </div>
         <p className="text-2xs text-ink/30 mt-1">
@@ -50,7 +50,7 @@ export function OnboardingForm({ hint }: { hint?: string }) {
           type="text"
           autoComplete="off"
           placeholder="Madrid, Spain"
-          className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+          className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-racing-green/40 focus:ring-2 focus:ring-racing-green/10 transition"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function OnboardingForm({ hint }: { hint?: string }) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-xl bg-orange px-4 py-2.5 font-semibold text-sm text-white hover:bg-orange-600 transition-colors disabled:opacity-60"
+        className="w-full rounded-xl bg-ink px-4 py-2.5 font-semibold text-sm text-paper hover:bg-ink/85 transition-colors disabled:opacity-60"
       >
         {isPending ? "Setting up your garage…" : "Start my garage →"}
       </button>

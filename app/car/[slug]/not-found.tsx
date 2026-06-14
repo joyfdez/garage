@@ -7,7 +7,7 @@ export default function CarNotFound() {
       <p className="text-ink/40 text-sm mb-6">This car doesn't exist or is private.</p>
       <Link
         href="/garage"
-        className="text-sm text-orange hover:underline"
+        className="text-sm text-green-bright hover:underline"
       >
         Back to garage
       </Link>

@@ -162,7 +162,7 @@ export default async function EventDetailPage({
           <span
             className={`text-xs font-medium px-2.5 py-1 rounded-full ${
               event.type === "build"
-                ? "bg-orange/10 text-orange"
+                ? "bg-racing-green/10 text-racing-green"
                 : "bg-ink/8 text-ink/60"
             }`}
           >

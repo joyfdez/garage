@@ -76,7 +76,7 @@ export default async function GaragePage() {
         <h1 className="font-display text-2xl font-bold">My Garage</h1>
         <Link
           href="/garage/new"
-          className="flex items-center gap-1.5 bg-orange text-white text-sm font-medium px-3 py-2 rounded-xl hover:bg-orange-600 transition-colors"
+          className="flex items-center gap-1.5 bg-ink text-paper text-sm font-medium px-3 py-2 rounded-xl hover:bg-ink/85 transition-colors"
         >
           <Plus size={15} />
           Add car
@@ -89,7 +89,7 @@ export default async function GaragePage() {
           <p className="text-ink/40 text-sm mb-6">Add your first car to get started.</p>
           <Link
             href="/garage/new"
-            className="inline-flex items-center gap-2 bg-orange text-white font-display font-bold px-6 py-3 rounded-2xl hover:bg-orange-600 transition-colors"
+            className="inline-flex items-center gap-2 bg-ink text-paper font-display font-bold px-6 py-3 rounded-2xl hover:bg-ink/85 transition-colors"
           >
             <Plus size={16} />
             Add your first car

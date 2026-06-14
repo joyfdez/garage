@@ -19,8 +19,8 @@ export function AuthForm({ errorParam }: { errorParam?: string }) {
   if (state && "success" in state && mode === "signup") {
     return (
       <div className="text-center space-y-3 py-4">
-        <div className="mx-auto w-10 h-10 rounded-full bg-orange/10 flex items-center justify-center">
-          <Mail size={20} className="text-orange" />
+        <div className="mx-auto w-10 h-10 rounded-full bg-racing-green/10 flex items-center justify-center">
+          <Mail size={20} className="text-racing-green" />
         </div>
         <div>
           <p className="font-display font-semibold text-ink">Check your email</p>
@@ -87,7 +87,7 @@ export function AuthForm({ errorParam }: { errorParam?: string }) {
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition"
+            className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-racing-green/40 focus:ring-2 focus:ring-racing-green/10 transition"
           />
         </div>
 
@@ -107,7 +107,7 @@ export function AuthForm({ errorParam }: { errorParam?: string }) {
               minLength={mode === "signup" ? 8 : undefined}
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
               placeholder={mode === "signup" ? "8+ characters" : "••••••••"}
-              className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-orange focus:ring-2 focus:ring-orange/10 transition pr-10"
+              className="w-full rounded-xl border border-card bg-white px-3.5 py-2.5 text-sm outline-none focus:border-racing-green/40 focus:ring-2 focus:ring-racing-green/10 transition pr-10"
             />
             <button
               type="button"
@@ -130,7 +130,7 @@ export function AuthForm({ errorParam }: { errorParam?: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded-xl bg-orange px-4 py-2.5 font-semibold text-sm text-white hover:bg-orange-600 transition-colors disabled:opacity-60"
+          className="w-full rounded-xl bg-ink px-4 py-2.5 font-semibold text-sm text-paper hover:bg-ink/85 transition-colors disabled:opacity-60"
         >
           {isPending
             ? mode === "signin"

@@ -44,13 +44,13 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={`flex flex-col items-center justify-center h-full gap-0.5 text-2xs font-medium transition-colors ${
-                  active ? "text-orange" : "text-ink/40"
+                  active ? "text-green-bright" : "text-ink/40"
                 }`}
               >
                 <Icon
                   size={22}
                   strokeWidth={active ? 2 : 1.5}
-                  className={active ? "text-orange" : ""}
+                  className={active ? "text-green-bright" : ""}
                 />
                 {label}
               </Link>

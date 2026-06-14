@@ -104,7 +104,7 @@ export function AddEventForm({
             onClick={() => setType("build")}
             className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
               type === "build"
-                ? "border-orange bg-orange/5 text-orange"
+                ? "border-racing-green bg-racing-green/5 text-racing-green"
                 : "border-card text-ink/40"
             }`}
           >
@@ -224,7 +224,7 @@ export function AddEventForm({
                   className="w-full h-full object-cover"
                 />
                 {i === 0 && (
-                  <span className="absolute top-1 left-1 text-[9px] bg-orange text-white px-1 rounded font-medium">
+                  <span className="absolute top-1 left-1 text-[9px] bg-racing-green text-white px-1 rounded font-medium">
                     Cover
                   </span>
                 )}
@@ -243,7 +243,7 @@ export function AddEventForm({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-racing-green/40 hover:text-racing-green transition-colors disabled:opacity-50"
         >
           {uploading ? "Uploading…" : "+ Add photos"}
         </button>
@@ -270,7 +270,7 @@ export function AddEventForm({
         <button
           type="submit"
           disabled={pending || uploading}
-          className="w-full bg-orange text-white font-display font-bold py-4 rounded-2xl text-base hover:bg-orange-600 transition-colors disabled:opacity-50"
+          className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
           {pending ? "Saving…" : "Post update"}
         </button>

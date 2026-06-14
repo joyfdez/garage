@@ -264,7 +264,7 @@ export function SettingsForm({
             )}
 
             <button type="submit" disabled={profilePending}
-              className="w-full bg-orange text-white font-display font-bold py-3 rounded-2xl hover:bg-orange-600 transition-colors disabled:opacity-50">
+              className="w-full bg-ink text-paper font-display font-bold py-3 rounded-2xl hover:bg-ink/85 transition-colors disabled:opacity-50">
               {profilePending ? "Saving…" : "Save profile"}
             </button>
           </form>

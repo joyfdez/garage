@@ -86,10 +86,10 @@ function ModelCard({
         isDriven || isWishlist ? "border-ink/15" : "border-ink/8"
       }`}
     >
-      {/* Top accent bar — coloured when tagged */}
+      {/* Top accent bar — always present, bolder when tagged */}
       <div
         className={`h-[3px] ${
-          isDriven ? "bg-racing-green" : isWishlist ? "bg-ink/20" : "bg-transparent"
+          isDriven ? "bg-racing-green" : isWishlist ? "bg-green-bright/60" : "bg-racing-green/12"
         }`}
       />
 
@@ -99,10 +99,10 @@ function ModelCard({
           <p className="text-[0.52rem] uppercase tracking-[0.2em] font-bold text-hint mb-0.5 leading-none">
             {model.make}
           </p>
-          <h3 className="font-display font-bold text-base leading-tight text-ink">
+          <h3 className={`font-display font-bold text-base leading-tight ${isDriven ? "text-racing-green" : "text-ink"}`}>
             {model.model}
             {model.generation && (
-              <span className="text-ink/45 font-semibold"> {model.generation}</span>
+              <span className={isDriven ? "text-racing-green/60" : "text-ink/45"}> {model.generation}</span>
             )}
           </h3>
         </div>
@@ -134,8 +134,8 @@ function ModelCard({
             disabled={!!pending}
             className={`flex-1 text-[0.65rem] font-bold py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
               isWishlist
-                ? "bg-ink text-paper"
-                : "border border-ink/10 text-hint hover:border-ink/25 hover:text-ink-muted"
+                ? "bg-green-bright text-white"
+                : "border border-ink/10 text-hint hover:border-green-bright/40 hover:text-green-bright"
             }`}
           >
             Wishlist

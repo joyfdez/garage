@@ -53,7 +53,7 @@ export function CropModal({ imageSrc, aspect, onSave, onClose }: CropModalProps)
           type="button"
           onClick={handleSave}
           disabled={saving || !croppedAreaPixels}
-          className="flex items-center gap-1.5 text-orange font-bold text-sm disabled:opacity-40 transition-opacity"
+          className="flex items-center gap-1.5 text-green-bright font-bold text-sm disabled:opacity-40 transition-opacity"
         >
           {saving ? "Saving…" : <><Check size={16} />Save</>}
         </button>
@@ -74,7 +74,7 @@ export function CropModal({ imageSrc, aspect, onSave, onClose }: CropModalProps)
           showGrid={false}
           style={{
             containerStyle: { background: "#000" },
-            cropAreaStyle: { border: "2px solid rgba(255,90,31,0.8)" },
+            cropAreaStyle: { border: "2px solid rgba(45,106,74,0.8)" },
           }}
         />
       </div>
@@ -90,7 +90,7 @@ export function CropModal({ imageSrc, aspect, onSave, onClose }: CropModalProps)
             step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 accent-orange"
+            className="flex-1 accent-racing-green"
           />
         </div>
         <button

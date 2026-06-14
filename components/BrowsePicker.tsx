@@ -162,7 +162,7 @@ export function BrowsePicker({
                 onClick={() => { setSelectedIdx(i); onSelect(m); }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
                   selectedIdx === i
-                    ? "border-orange bg-orange/5 text-orange"
+                    ? "border-racing-green bg-racing-green/5 text-racing-green"
                     : "border-card text-ink/60 hover:border-ink/20"
                 }`}
               >

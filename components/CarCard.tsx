@@ -52,8 +52,8 @@ export function CarCard({
             </div>
           )}
           {isPrivate && (
-            <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-1.5">
-              <Lock size={11} className="text-white" />
+            <div className="absolute top-2 right-2 bg-paper/90 backdrop-blur-sm rounded-full p-1">
+              <Lock size={10} className="text-ink-muted" />
             </div>
           )}
           {previouslyOwned && (

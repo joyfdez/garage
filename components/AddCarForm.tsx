@@ -150,7 +150,7 @@ function CascadePicker({
                 onClick={() => { setPickIdx(i); onResolve(m, cYear); }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
                   pickIdx === i
-                    ? "border-orange bg-orange/5 text-orange"
+                    ? "border-racing-green bg-racing-green/5 text-racing-green"
                     : "border-card text-ink/60 hover:border-ink/20"
                 }`}
               >
@@ -331,9 +331,9 @@ export function AddCarForm({ userId }: { userId: string }) {
         {selectedModel && !manualMode && (
           <div className="space-y-4">
             {/* Confirmation banner */}
-            <div className="flex items-center justify-between bg-orange/8 border border-orange/20 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between bg-racing-green/8 border border-racing-green/20 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 min-w-0">
-                <Check size={15} className="text-orange flex-shrink-0" />
+                <Check size={15} className="text-racing-green flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="font-medium text-sm leading-tight">
                     {selectedModel.make} {selectedModel.model}{" "}
@@ -419,7 +419,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                   placeholder="Know your chassis? Type E30, S13, Miata…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-9 py-3 bg-card rounded-xl text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-orange/40"
+                  className="w-full pl-9 pr-9 py-3 bg-card rounded-xl text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20"
                   autoComplete="off"
                 />
                 {searchQuery && (
@@ -591,7 +591,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.previewUrl} alt="" className="w-full h-full object-cover" />
                 {i === 0 && (
-                  <span className="absolute top-1 left-1 text-[9px] bg-orange text-white px-1 rounded font-medium">Cover</span>
+                  <span className="absolute top-1 left-1 text-[9px] bg-racing-green text-white px-1 rounded font-medium">Cover</span>
                 )}
                 <button type="button" onClick={() => removePhoto(p.path)}
                   className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 text-white">
@@ -605,7 +605,7 @@ export function AddCarForm({ userId }: { userId: string }) {
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-racing-green/40 hover:text-racing-green transition-colors disabled:opacity-50"
         >
           {uploading ? "Uploading…" : "+ Add photos"}
         </button>
@@ -651,7 +651,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                 type="button"
                 onClick={() => setPurchasePricePublic((v) => !v)}
                 className={`flex items-center gap-1.5 text-xs transition-colors ${
-                  purchasePricePublic ? "text-orange" : "text-ink/40 hover:text-ink/60"
+                  purchasePricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
                 }`}
               >
                 {purchasePricePublic ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -687,7 +687,7 @@ export function AddCarForm({ userId }: { userId: string }) {
         <button
           type="submit"
           disabled={pending || uploading}
-          className="w-full bg-orange text-white font-display font-bold py-4 rounded-2xl text-base hover:bg-orange-600 transition-colors disabled:opacity-50"
+          className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
           {pending ? "Saving…" : "Add to garage"}
         </button>

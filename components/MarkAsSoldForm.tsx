@@ -60,7 +60,7 @@ export function MarkAsSoldForm({
           type="button"
           onClick={() => setPricePublic((v) => !v)}
           className={`flex items-center gap-1.5 text-xs transition-colors ${
-            pricePublic ? "text-orange" : "text-ink/40 hover:text-ink/60"
+            pricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
           }`}
         >
           {pricePublic ? <Eye size={12} /> : <EyeOff size={12} />}

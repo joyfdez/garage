@@ -15,7 +15,7 @@
 
 @layer components {
   .input-field {
-    @apply bg-card rounded-xl px-3 py-3 text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-orange/40 transition-shadow;
+    @apply bg-card rounded-xl px-3 py-3 text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20 transition-shadow;
   }
 
   /* Glass surface — use ONLY over photography, never over flat backgrounds */
