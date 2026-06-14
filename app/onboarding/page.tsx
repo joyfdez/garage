@@ -19,7 +19,7 @@ export default async function OnboardingPage() {
     .eq("id", user.id)
     .single();
 
-  if (profile) redirect("/garage");
+  if (profile) redirect("/profile");
 
   // Suggest a username from their Google display name, if available
   const fullName = user.user_metadata?.full_name as string | undefined;

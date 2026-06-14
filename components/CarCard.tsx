@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock, Wrench } from "lucide-react";
+import { Lock } from "lucide-react";
 
 interface CarCardProps {
   slug: string;
@@ -47,8 +47,17 @@ export function CarCard({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Wrench size={32} className="text-ink/10" />
+            <div className="w-full h-full bg-racing-green flex flex-col justify-end p-3">
+              <p className="text-[0.5rem] uppercase tracking-[0.18em] font-bold text-white/50 leading-none mb-1">
+                {make}
+              </p>
+              <p className="font-display font-extrabold text-white text-sm leading-tight">
+                {model}
+                {generation && (
+                  <span className="text-white/55 font-semibold ml-1">{generation}</span>
+                )}
+              </p>
+              <p className="text-white/30 text-[0.58rem] mt-1">{year}</p>
             </div>
           )}
           {isPrivate && (

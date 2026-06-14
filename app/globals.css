@@ -89,3 +89,17 @@
 @media (prefers-reduced-motion: reduce) {
   .scroll-cue-inner { animation: none; }
 }
+
+/* Tab-content crossfade — triggered by key change on the container */
+.tab-fade {
+  animation: tabFade 0.18s ease both;
+}
+
+@keyframes tabFade {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-fade { animation: none; }
+}

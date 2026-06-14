@@ -55,7 +55,7 @@ export default async function LandingPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/garage");
+  if (user) redirect("/profile");
 
   return (
     <div className="bg-paper page-enter">
