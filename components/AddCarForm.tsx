@@ -35,6 +35,7 @@ function CascadePicker({
   const [resolving, setResolving] = useState(false);
   const [matches, setMatches] = useState<CarModel[] | null>(null);
   const [pickIdx, setPickIdx] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetch("/api/car-models/makes").then((r) => r.json()).then(setMakes).catch(() => {});
@@ -54,19 +55,24 @@ function CascadePicker({
       const yr = parseInt(y, 10);
       if (!make || !model || isNaN(yr) || yr < 1885 || yr > new Date().getFullYear() + 2) {
         setMatches(null);
+        setResolving(false); // always clear spinner for invalid/incomplete input
         return;
       }
+      // Cancel any in-flight request so stale results never overwrite fresh ones
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
       setResolving(true);
       try {
         const res = await fetch(
-          `/api/car-models/resolve?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${yr}`
+          `/api/car-models/resolve?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${yr}`,
+          { signal: abortRef.current.signal }
         );
         const data: CarModel[] = await res.json();
         setMatches(data);
         setPickIdx(0);
         if (data.length === 1) onResolve(data[0], y);
-      } catch {
-        setMatches([]);
+      } catch (e) {
+        if ((e as { name?: string }).name !== "AbortError") setMatches([]);
       } finally {
         setResolving(false);
       }

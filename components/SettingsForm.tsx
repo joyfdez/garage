@@ -114,9 +114,14 @@ export function SettingsForm({
         return;
       }
 
-      const saveErr = await updateCoverPhotoPath(path);
+      // Get versioned public URL (same pattern as avatar) so the browser always
+      // fetches the new image instead of serving the cached previous one.
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const urlWithBust = `${publicUrl}?v=${Date.now()}`;
+
+      const saveErr = await updateCoverPhotoPath(urlWithBust);
       if (saveErr) { setPhotoError(saveErr); return; }
-      setCoverPath(path);
+      setCoverPath(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
     } catch (err) {
@@ -127,8 +132,12 @@ export function SettingsForm({
     }
   }, [userId]);
 
+  // cover_photo_path may be a full versioned URL (new uploads) or a bare storage
+  // path (legacy data). Detect by prefix so both display correctly.
   const coverUrl = coverPath
-    ? `${supabaseUrl}/storage/v1/object/public/avatars/${coverPath}?t=${coverPath}`
+    ? coverPath.startsWith("http")
+      ? coverPath
+      : `${supabaseUrl}/storage/v1/object/public/avatars/${coverPath}`
     : null;
 
   return (

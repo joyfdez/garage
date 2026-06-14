@@ -307,7 +307,9 @@ export async function deleteCar(carId: string): Promise<string | null> {
     await supabase.storage.from("car-photos").remove(paths);
   }
 
-  redirect("/garage");
+  revalidatePath("/garage");
+  revalidatePath("/profile");
+  return null;
 }
 
 export async function addPhotosToGallery(

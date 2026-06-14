@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Globe, Lock, Star, X, Camera } from "lucide-react";
 import {
   updateCar,
@@ -54,6 +55,7 @@ export function EditCarForm({
   supabaseUrl: string;
   userId: string;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState<CarState, FormData>(updateCar, null);
   const [isPrivate, setIsPrivate] = useState(car.visibility === "private");
 
@@ -65,12 +67,19 @@ export function EditCarForm({
   async function handleDeleteCar() {
     setDeleting(true);
     setDeleteError(null);
-    const err = await deleteCar(car.id);
-    if (err) {
-      setDeleteError(err);
+    try {
+      const err = await deleteCar(car.id);
+      if (err) {
+        setDeleteError(err);
+        setDeleting(false);
+        return;
+      }
+      // DB delete succeeded — navigate to garage (revalidatePath already called server-side)
+      router.push("/garage");
+    } catch {
+      setDeleteError("Something went wrong. Please try again.");
       setDeleting(false);
     }
-    // On success, deleteCar redirects — no need to update state
   }
 
   // Photo state

@@ -308,17 +308,25 @@ export function ProfileShell({
   const liveDriven   = drivenModels.filter((m) => tagSet.has(`${m.id}:driven`));
   const liveWishlist = wishlistModels.filter((m) => tagSet.has(`${m.id}:wishlist`));
 
-  // Counts
+  // Counts — read directly from tagSet so they update live regardless of
+  // whether a tag was added here or from another page in the same session.
+  const tagSetDrivenCount   = [...tagSet].filter((k) => k.endsWith(":driven")).length;
+  const tagSetWishlistCount = [...tagSet].filter((k) => k.endsWith(":wishlist")).length;
+
   const counts: Record<Tab, number> = {
     "owned-now": currentCars.length,
     owned:       currentCars.length + previousCars.length,
-    driven:      liveDriven.length,
-    wishlist:    liveWishlist.length,
+    driven:      tagSetDrivenCount,
+    wishlist:    tagSetWishlistCount,
   };
 
   // ── URLs ──
+  // cover_photo_path may be a full versioned URL (new uploads) or a bare storage
+  // path (legacy data). Detect by prefix so both display correctly.
   const coverUrl = coverPhotoPath
-    ? `${supabaseUrl}/storage/v1/object/public/avatars/${coverPhotoPath}`
+    ? coverPhotoPath.startsWith("http")
+      ? coverPhotoPath
+      : `${supabaseUrl}/storage/v1/object/public/avatars/${coverPhotoPath}`
     : null;
 
   return (

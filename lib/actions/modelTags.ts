@@ -32,12 +32,14 @@ export async function toggleModelTag(
       .delete()
       .eq("id", existing.id)
       .eq("user_id", user.id);
+    if (error) console.error("[toggleModelTag] delete error:", error.code, error.message, error.details);
     dbError = error?.message;
     tagged  = false;
   } else {
     const { error } = await supabase
       .from("user_model_tags")
       .insert({ user_id: user.id, model_id: modelId, tag_type: tagType });
+    if (error) console.error("[toggleModelTag] insert error:", error.code, error.message, error.details);
     dbError = error?.message;
     tagged  = true;
   }
