@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
 import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
+import { toast } from "sonner";
 import { BrowsePicker, CarModel } from "@/components/BrowsePicker";
 import { ModelCard } from "@/components/ModelCard";
 import { debounce } from "@/lib/utils/debounce";
@@ -110,6 +111,14 @@ export function ExploreSearch({
           const next = new Set(prev);
           wasTagged ? next.add(key) : next.delete(key);
           return next;
+        });
+        toast.error("Couldn't save — please try again", {
+          style: { borderLeft: "3px solid #ef4444" },
+        });
+      } else {
+        const label = tagType === "driven" ? "Driven" : "Wishlist";
+        toast(wasTagged ? `Removed from ${label}` : `Added to ${label}`, {
+          style: { borderLeft: "3px solid #1A3A2E" },
         });
       }
     } finally {

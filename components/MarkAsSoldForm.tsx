@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { DollarSign, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export function MarkAsSoldForm({
   carId,
@@ -15,9 +17,19 @@ export function MarkAsSoldForm({
 }) {
   const [state, action, pending] = useActionState<CarState, FormData>(markAsSold, null);
   const [pricePublic, setPricePublic] = useState(false);
+  const [navigating, setNavigating] = useState(false);
+  const router = useRouter();
   const lockedCurrency = purchaseCurrency || "EUR";
 
   const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    if (state && "slug" in state) {
+      setNavigating(true);
+      toast.success("Marked as sold", { style: { borderLeft: "3px solid #1A3A2E" } });
+      router.push(`/car/${state.slug}`);
+    }
+  }, [state, router]);
 
   return (
     <form action={action} className="space-y-6">
@@ -68,14 +80,14 @@ export function MarkAsSoldForm({
         </button>
       </div>
 
-      {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || navigating}
         className="w-full bg-ink text-background font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/80 transition-colors disabled:opacity-50"
       >
-        {pending ? "Saving…" : `Mark ${carName} as sold`}
+        {pending || navigating ? "Saving…" : `Mark ${carName} as sold`}
       </button>
     </form>
   );

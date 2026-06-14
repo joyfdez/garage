@@ -126,6 +126,40 @@ export async function changePassword(
   return { success: true };
 }
 
+export type UsernameState = SettingsState;
+
+export async function updateUsername(
+  _prev: UsernameState,
+  formData: FormData
+): Promise<UsernameState> {
+  const newUsername = (formData.get("username") as string ?? "").trim().toLowerCase();
+
+  if (!/^[a-z0-9_]{2,30}$/.test(newUsername)) {
+    return { error: "Username must be 2–30 characters: lowercase letters, numbers, and underscores only." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ username: newUsername })
+    .eq("id", user.id);
+
+  if (error?.code === "23505") {
+    return { error: "That username is already taken." };
+  }
+  if (error) {
+    return { error: "Failed to update username. Please try again." };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/u", "layout");
+  return { success: true };
+}
+
 export type DeleteState = string | null;   // error message or null on success
 
 export async function deleteAccount(

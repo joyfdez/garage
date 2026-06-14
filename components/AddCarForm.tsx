@@ -3,11 +3,13 @@
 import {
   useActionState, useRef, useState, useCallback, useEffect,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, ChevronDown, Lock, Globe, X, Check, ChevronRight,
   Eye, EyeOff, DollarSign,
 } from "lucide-react";
 import { createCar, CarState } from "@/lib/actions/car";
+import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
@@ -180,6 +182,18 @@ function CascadePicker({
 
 export function AddCarForm({ userId }: { userId: string }) {
   const [state, action, pending] = useActionState<CarState, FormData>(createCar, null);
+  const router = useRouter();
+  const [navigating, setNavigating] = useState(false);
+
+  useEffect(() => {
+    if (state && "slug" in state) {
+      setNavigating(true);
+      toast.success("Car added to your garage", {
+        style: { borderLeft: "3px solid #1A3A2E" },
+      });
+      router.push(`/car/${state.slug}`);
+    }
+  }, [state, router]);
 
   // Model resolution state
   const [selectedModel, setSelectedModel] = useState<CarModel | null>(null);
@@ -687,15 +701,15 @@ export function AddCarForm({ userId }: { userId: string }) {
         </details>
       </section>
 
-      {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
 
       <div className="fixed bottom-16 inset-x-0 px-4 md:static md:bottom-auto md:px-0">
         <button
           type="submit"
-          disabled={pending || uploading}
+          disabled={pending || navigating || uploading}
           className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Add to garage"}
+          {pending || navigating ? "Saving…" : "Add to garage"}
         </button>
       </div>
     </form>

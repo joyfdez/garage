@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type EventState = { error: string } | null;
+export type EventState = { error: string } | { carSlug: string; eventId: string } | null;
 
 export async function createEvent(
   _prev: EventState,
@@ -95,5 +96,6 @@ export async function createEvent(
     );
   }
 
-  redirect(`/car/${car.slug}/events/${event.id}`);
+  revalidatePath(`/car/${car.slug}`);
+  return { carSlug: car.slug, eventId: event.id };
 }

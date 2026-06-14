@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, Archivo } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,6 +44,20 @@ export default function RootLayout({
       <body className="bg-background text-ink font-sans antialiased">
         <main className="min-h-dvh pb-16 md:pb-0">{children}</main>
         <BottomNav />
+        <Toaster
+          position="bottom-center"
+          offset={80}
+          toastOptions={{
+            style: {
+              background: "#FBFAF7",
+              border: "1px solid rgba(17,17,17,0.08)",
+              borderRadius: "16px",
+              color: "#111111",
+              fontSize: "0.875rem",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
+            },
+          }}
+        />
       </body>
     </html>
   );

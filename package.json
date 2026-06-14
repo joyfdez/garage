@@ -16,7 +16,9 @@
     "next": "^16.2.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-easy-crop": "^6.0.2"
+    "react-easy-crop": "^6.0.2",
+    "react-select": "^5.10.2",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@types/node": "^20",

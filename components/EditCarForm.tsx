@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef, useState, useCallback } from "react";
+import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Globe, Lock, Star, X, Camera } from "lucide-react";
+import { toast } from "sonner";
 import {
   updateCar,
   setCarCover,
@@ -57,7 +58,16 @@ export function EditCarForm({
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<CarState, FormData>(updateCar, null);
+  const [navigating, setNavigating] = useState(false);
   const [isPrivate, setIsPrivate] = useState(car.visibility === "private");
+
+  useEffect(() => {
+    if (state && "slug" in state) {
+      setNavigating(true);
+      toast.success("Changes saved", { style: { borderLeft: "3px solid #1A3A2E" } });
+      router.push(`/car/${state.slug}`);
+    }
+  }, [state, router]);
 
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -74,7 +84,7 @@ export function EditCarForm({
         setDeleting(false);
         return;
       }
-      // DB delete succeeded — navigate to garage (revalidatePath already called server-side)
+      toast.success("Car deleted", { style: { borderLeft: "3px solid #1A3A2E" } });
       router.push("/garage");
     } catch {
       setDeleteError("Something went wrong. Please try again.");
@@ -310,14 +320,14 @@ export function EditCarForm({
           </div>
         </section>
 
-        {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+        {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
 
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || navigating}
           className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save changes"}
+          {pending || navigating ? "Saving…" : "Save changes"}
         </button>
       </form>
 

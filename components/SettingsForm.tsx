@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState, useRef, useState, useCallback } from "react";
+import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import {
   updateProfile, updateAvatarUrl, updateCoverPhotoPath,
-  changePassword, deleteAccount,
-  SettingsState, PasswordState, DeleteState,
+  changePassword, deleteAccount, updateUsername,
+  SettingsState, PasswordState, DeleteState, UsernameState,
 } from "@/lib/actions/profile";
 import { signOut } from "@/lib/actions/auth";
-import { Camera, LogOut, Eye, EyeOff, Lock, Trash2, CheckCircle2 } from "lucide-react";
+import { Camera, LogOut, Eye, EyeOff, Lock, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CropModal } from "@/components/CropModal";
+import { CountrySelect } from "@/components/CountrySelect";
+import { toast } from "sonner";
 
 export interface ProfileForSettings {
   username: string;
@@ -43,6 +45,12 @@ export function SettingsForm({
     useActionState<PasswordState, FormData>(changePassword, null);
   const [deleteState, deleteAction, deletePending] =
     useActionState<DeleteState, FormData>(deleteAccount, null);
+  const [usernameState, usernameAction, usernamePending] =
+    useActionState<UsernameState, FormData>(updateUsername, null);
+
+  // ── Username tracking ────────────────────────────────────────────────────────
+  const [currentUsername, setCurrentUsername] = useState(profile.username);
+  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   // ── Photo state ──────────────────────────────────────────────────────────────
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
@@ -57,6 +65,37 @@ export function SettingsForm({
   // ── Delete confirm state ─────────────────────────────────────────────────────
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // ── Toasts ───────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!profileState) return;
+    if (profileState.success) {
+      toast.success("Profile saved", { style: { borderLeft: "3px solid #1A3A2E" } });
+    } else if (profileState.error) {
+      toast.error(profileState.error, { style: { borderLeft: "3px solid #ef4444" } });
+    }
+  }, [profileState]);
+
+  useEffect(() => {
+    if (!pwState) return;
+    if (pwState.success) {
+      toast.success("Password updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+    } else if (pwState.error) {
+      toast.error(pwState.error, { style: { borderLeft: "3px solid #ef4444" } });
+    }
+  }, [pwState]);
+
+  useEffect(() => {
+    if (!usernameState) return;
+    if (usernameState.success) {
+      const newUsername = usernameInputRef.current?.value ?? currentUsername;
+      setCurrentUsername(newUsername);
+      toast.success("Username updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+    } else if (usernameState.error) {
+      toast.error(usernameState.error, { style: { borderLeft: "3px solid #ef4444" } });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usernameState]);
 
   function openCrop(file: File, target: "avatar" | "cover") {
     const reader = new FileReader();
@@ -86,10 +125,15 @@ export function SettingsForm({
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
       const urlWithBust = `${publicUrl}?t=${Date.now()}`;
       const saveErr = await updateAvatarUrl(urlWithBust);
-      if (saveErr) { setPhotoError(saveErr); return; }
+      if (saveErr) {
+        setPhotoError(saveErr);
+        toast.error("Couldn't save avatar", { style: { borderLeft: "3px solid #ef4444" } });
+        return;
+      }
       setAvatarUrl(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
+      toast.success("Photo updated", { style: { borderLeft: "3px solid #1A3A2E" } });
     } catch (err) {
       console.error("[handleAvatarSave] unexpected error:", err);
       setPhotoError("Unexpected error — check console.");
@@ -120,10 +164,15 @@ export function SettingsForm({
       const urlWithBust = `${publicUrl}?v=${Date.now()}`;
 
       const saveErr = await updateCoverPhotoPath(urlWithBust);
-      if (saveErr) { setPhotoError(saveErr); return; }
+      if (saveErr) {
+        setPhotoError(saveErr);
+        toast.error("Couldn't save cover", { style: { borderLeft: "3px solid #ef4444" } });
+        return;
+      }
       setCoverPath(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
+      toast.success("Cover updated", { style: { borderLeft: "3px solid #1A3A2E" } });
     } catch (err) {
       console.error("[handleCoverSave] unexpected error:", err);
       setPhotoError("Unexpected error — check console.");
@@ -200,7 +249,7 @@ export function SettingsForm({
                 <img src={avatarUrl} alt="" className="w-16 h-16 rounded-full object-cover" />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center font-display font-bold text-2xl text-ink/30">
-                  {profile.username[0].toUpperCase()}
+                  {currentUsername[0].toUpperCase()}
                 </div>
               )}
               <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-disabled:opacity-100 transition-opacity">
@@ -214,11 +263,45 @@ export function SettingsForm({
             <input ref={avatarInputRef} type="file" accept="image/*" className="sr-only"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "avatar"); }} />
             <div>
-              <p className="font-medium text-sm">@{profile.username}</p>
+              <p className="font-medium text-sm">@{currentUsername}</p>
               <p className="text-xs text-ink/30 mt-0.5">Tap to change avatar or cover.</p>
               {photoError && <p className="text-xs text-red-500 mt-0.5">{photoError}</p>}
             </div>
           </div>
+
+          {/* Username */}
+          <form action={usernameAction} className="space-y-3 pb-4 border-b border-card">
+            <div>
+              <label htmlFor="username-input" className="text-xs text-ink/50 mb-1 block">Username</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-sm select-none">@</span>
+                <input
+                  ref={usernameInputRef}
+                  id="username-input"
+                  name="username"
+                  defaultValue={currentUsername}
+                  placeholder="garage_builder"
+                  minLength={2}
+                  maxLength={30}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="input-field w-full pl-7"
+                />
+              </div>
+              <p className="text-xs text-ink/30 mt-1">Lowercase letters, numbers, underscores. 2–30 chars.</p>
+            </div>
+            {usernameState?.error && (
+              <p className="text-sm text-red-500">{usernameState.error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={usernamePending}
+              className="px-4 py-2.5 bg-card rounded-xl text-sm font-medium hover:bg-ink/10 transition-colors disabled:opacity-50"
+            >
+              {usernamePending ? "Saving…" : "Change username"}
+            </button>
+          </form>
 
           {/* Profile form */}
           <form action={profileAction} className="space-y-4">
@@ -254,9 +337,8 @@ export function SettingsForm({
                   placeholder="Barcelona" className="input-field w-full" />
               </div>
               <div>
-                <label className="text-xs text-ink/50 mb-1 block">Country</label>
-                <input name="country" defaultValue={profile.country ?? ""}
-                  placeholder="Spain" className="input-field w-full" />
+                <label htmlFor="country-select-input" className="text-xs text-ink/50 mb-1 block">Country</label>
+                <CountrySelect defaultValue={profile.country} />
               </div>
             </div>
 
@@ -276,15 +358,6 @@ export function SettingsForm({
                   className="input-field w-full" />
               </div>
             </div>
-
-            {profileState?.error && (
-              <p className="text-sm text-red-500">{profileState.error}</p>
-            )}
-            {profileState?.success && (
-              <p className="flex items-center gap-1.5 text-sm text-green-600">
-                <CheckCircle2 size={14} />Profile saved.
-              </p>
-            )}
 
             <button type="submit" disabled={profilePending}
               className="w-full bg-ink text-paper font-display font-bold py-3 rounded-2xl hover:bg-ink/85 transition-colors disabled:opacity-50">
@@ -314,13 +387,6 @@ export function SettingsForm({
               <input name="confirm_password" type={showPassword ? "text" : "password"}
                 placeholder="Same as above" className="input-field w-full" />
             </div>
-
-            {pwState?.error && <p className="text-sm text-red-500">{pwState.error}</p>}
-            {pwState?.success && (
-              <p className="flex items-center gap-1.5 text-sm text-green-600">
-                <CheckCircle2 size={14} />Password updated.
-              </p>
-            )}
 
             <button type="submit" disabled={pwPending}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-card rounded-xl text-sm font-medium hover:bg-ink/10 transition-colors disabled:opacity-50">

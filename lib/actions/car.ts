@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type CarState = { error: string } | null;
+export type CarState = { error: string } | { slug: string } | null;
 
 function toSlug(text: string): string {
   return text
@@ -119,7 +119,9 @@ export async function createCar(
     );
   }
 
-  redirect(`/car/${car.slug}`);
+  revalidatePath("/garage");
+  revalidatePath("/profile");
+  return { slug: car.slug };
 }
 
 export async function updateCar(
@@ -167,7 +169,9 @@ export async function updateCar(
   const { error } = await supabase.from("cars").update(updates).eq("id", carId);
   if (error) return { error: "Failed to save changes. Please try again." };
 
-  redirect(`/car/${existing.slug}`);
+  revalidatePath(`/car/${existing.slug}`);
+  revalidatePath("/garage");
+  return { slug: existing.slug };
 }
 
 export async function setCarCover(
@@ -274,7 +278,7 @@ export async function markAsSold(
 
   revalidatePath(`/car/${car.slug}`);
   revalidatePath("/garage");
-  redirect(`/car/${car.slug}`);
+  return { slug: car.slug };
 }
 
 export async function deleteCar(carId: string): Promise<string | null> {

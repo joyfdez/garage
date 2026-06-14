@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { X, Hammer, Wrench } from "lucide-react";
 import { createEvent, EventState } from "@/lib/actions/event";
+import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,11 +26,21 @@ export function AddEventForm({
     createEvent,
     null
   );
+  const router = useRouter();
+  const [navigating, setNavigating] = useState(false);
   const [type, setType] = useState<EventType>("build");
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (state && "carSlug" in state) {
+      setNavigating(true);
+      toast.success("Update posted", { style: { borderLeft: "3px solid #1A3A2E" } });
+      router.push(`/car/${state.carSlug}/events/${state.eventId}`);
+    }
+  }, [state, router]);
 
   async function handlePhotos(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -261,7 +273,7 @@ export function AddEventForm({
       </div>
 
       {/* Error */}
-      {state?.error && (
+      {state && "error" in state && (
         <p className="text-sm text-red-500">{state.error}</p>
       )}
 
@@ -269,10 +281,10 @@ export function AddEventForm({
       <div className="fixed bottom-16 inset-x-0 px-4 md:static md:bottom-auto md:px-0">
         <button
           type="submit"
-          disabled={pending || uploading}
+          disabled={pending || navigating || uploading}
           className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Post update"}
+          {pending || navigating ? "Saving…" : "Post update"}
         </button>
       </div>
     </form>
