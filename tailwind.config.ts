@@ -9,17 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Legacy tokens — kept for screens not yet redesigned
-        background: "#F6F6F4",
         card: "#EDEDED",
         ink: "#111111",
-        orange: {
-          DEFAULT: "#FF5A1F",
-          50: "#FFF0EB",
-          100: "#FFD9CC",
-          500: "#FF5A1F",
-          600: "#E64D15",
-        },
         // Magazine design system
         paper: "#FBFAF7",
         "racing-green": "#1A3A2E",

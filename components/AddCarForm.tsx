@@ -166,6 +166,9 @@ export function AddCarForm({ userId }: { userId: string }) {
   useEffect(() => {
     if (state && "slug" in state) {
       setNavigating(true);
+      state.warnings?.forEach((w) =>
+        toast.warning(w, { style: { borderLeft: "3px solid #D97706" } })
+      );
       toast.success("Car added to your garage", {
         style: { borderLeft: "3px solid #1A3A2E" },
       });
@@ -432,7 +435,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                       <button
                         type="button"
                         onMouseDown={() => handleSearchSelect(m)}
-                        className="w-full text-left px-4 py-3 hover:bg-background text-sm flex items-center justify-between gap-3"
+                        className="w-full text-left px-4 py-3 hover:bg-paper text-sm flex items-center justify-between gap-3"
                       >
                         <span>
                           <span className="font-medium">{m.make} {m.model} {m.generation}</span>

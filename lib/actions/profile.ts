@@ -38,7 +38,7 @@ export async function createProfile(
     return { error: "Something went wrong. Please try again." };
   }
 
-  redirect("/garage");
+  redirect("/profile");
 }
 
 export type SettingsState = { error?: string; success?: boolean } | null;
@@ -160,7 +160,7 @@ export async function updateUsername(
   return { success: true };
 }
 
-export type DeleteState = string | null;   // error message or null on success
+export type DeleteState = { error: string } | { success: true } | null;
 
 export async function deleteAccount(
   _prev: DeleteState,
@@ -169,11 +169,11 @@ export async function deleteAccount(
   const expected = formData.get("expected_username") as string;
   const typed    = (formData.get("confirm_text") as string)?.trim();
 
-  if (typed !== expected) return "Username doesn't match. Try again.";
+  if (typed !== expected) return { error: "Username doesn't match. Try again." };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return "Not authenticated";
+  if (!user) return { error: "Not authenticated" };
 
   // 1. Collect car photo storage paths before deleting
   const { data: userCars } = await supabase
@@ -200,7 +200,7 @@ export async function deleteAccount(
 
   // 3. Call SECURITY DEFINER function — deletes cars (cascade) then auth user (profile cascades)
   const { error } = await supabase.rpc("delete_current_user");
-  if (error) return "Failed to delete account. Please try again.";
+  if (error) return { error: "Failed to delete account. Please try again." };
 
-  redirect("/");
+  return { success: true };
 }

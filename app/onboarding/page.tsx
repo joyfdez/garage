@@ -28,7 +28,7 @@ export default async function OnboardingPage() {
     : undefined;
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-5 py-12 bg-background">
+    <div className="min-h-dvh flex flex-col items-center justify-center px-5 py-12 bg-paper">
       <div className="w-full max-w-sm space-y-8">
         <div>
           <h1 className="font-display text-2xl font-bold">Set up your garage</h1>

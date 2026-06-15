@@ -41,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${archivo.variable}`}>
-      <body className="bg-background text-ink font-sans antialiased">
+      <body className="bg-paper text-ink font-sans antialiased">
         <main className="min-h-dvh pb-16 md:pb-0">{children}</main>
         <BottomNav />
         <Toaster

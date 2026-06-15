@@ -12,7 +12,7 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-5 py-12 bg-background">
+    <div className="min-h-dvh flex flex-col items-center justify-center px-5 py-12 bg-paper">
       <div className="w-full max-w-sm space-y-8">
         {/* Brand mark */}
         <div className="text-center">

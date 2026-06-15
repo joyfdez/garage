@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   updateProfile, updateAvatarUrl, updateCoverPhotoPath,
   changePassword, deleteAccount, updateUsername,
@@ -48,6 +49,8 @@ export function SettingsForm({
   const [usernameState, usernameAction, usernamePending] =
     useActionState<UsernameState, FormData>(updateUsername, null);
 
+  const router = useRouter();
+
   // ── Username tracking ────────────────────────────────────────────────────────
   const [currentUsername, setCurrentUsername] = useState(profile.username);
   const usernameInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +87,12 @@ export function SettingsForm({
       toast.error(pwState.error, { style: { borderLeft: "3px solid #ef4444" } });
     }
   }, [pwState]);
+
+  useEffect(() => {
+    if (deleteState && "success" in deleteState) {
+      router.push("/");
+    }
+  }, [deleteState, router]);
 
   useEffect(() => {
     if (!usernameState) return;
@@ -435,7 +444,9 @@ export function SettingsForm({
                     placeholder={profile.username}
                     className="input-field w-full border border-red-200 focus:ring-red-300/40" />
                 </div>
-                {deleteState && <p className="text-xs text-red-600">{deleteState}</p>}
+                {deleteState && "error" in deleteState && (
+                  <p className="text-xs text-red-600">{deleteState.error}</p>
+                )}
                 <div className="flex gap-2">
                   <button type="submit" disabled={deletePending}
                     className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-display font-bold text-sm py-2.5 rounded-xl transition-colors">

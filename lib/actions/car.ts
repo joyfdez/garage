@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type CarState = { error: string } | { slug: string } | null;
+export type CarState = { error: string } | { slug: string; warnings?: string[] } | null;
 
 function toSlug(text: string): string {
   return text
@@ -102,26 +102,35 @@ export async function createCar(
   }
 
   const car = rpcData as { id: string; slug: string };
+  const warnings: string[] = [];
 
   if (vin) {
-    await supabase.from("car_vins").insert({ car_id: car.id, vin });
+    const { error: vinError } = await supabase.from("car_vins").insert({ car_id: car.id, vin });
+    if (vinError) {
+      console.error("[createCar] VIN insert failed:", vinError.code, vinError.message);
+      warnings.push("VIN couldn't be saved — add it later from the car settings.");
+    }
   }
 
   // Insert photo rows ([cover, ...extras])
   const allPaths = [coverPhotoPath, ...extraPhotoPaths].filter(Boolean) as string[];
   if (allPaths.length > 0) {
-    await supabase.from("photos").insert(
+    const { error: photoError } = await supabase.from("photos").insert(
       allPaths.map((storage_path, position) => ({
         car_id: car.id,
         storage_path,
         position,
       }))
     );
+    if (photoError) {
+      console.error("[createCar] photos insert failed:", photoError.code, photoError.message);
+      warnings.push("Photos couldn't be saved — add them from the car page.");
+    }
   }
 
   revalidatePath("/garage");
   revalidatePath("/profile");
-  return { slug: car.slug };
+  return warnings.length > 0 ? { slug: car.slug, warnings } : { slug: car.slug };
 }
 
 export async function updateCar(
@@ -198,6 +207,8 @@ export async function setCarCover(
 
   if (error) return "Failed to update cover";
   revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/profile");
+  revalidatePath("/garage");
   return null;
 }
 
@@ -229,6 +240,8 @@ export async function deleteCarPhoto(
   }
 
   revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/profile");
+  revalidatePath("/garage");
   return null;
 }
 
@@ -355,5 +368,7 @@ export async function addPhotosToGallery(
 
   if (error) return "Failed to save photos";
   revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/profile");
+  revalidatePath("/garage");
   return null;
 }
