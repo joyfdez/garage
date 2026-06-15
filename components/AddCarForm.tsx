@@ -226,18 +226,18 @@ export function AddCarForm({ userId }: { userId: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Cascade resolves: generation known, year pre-filled with year_start
+  // Cascade resolves: generation known, year_start stored as default, input left blank
   const handleCascadeResolve = useCallback((model: CarModel, year: string) => {
     setSelectedModel(model);
-    setFinalYear(year);
-    setYearInput(year);
+    setFinalYear(year);    // year_start — used as stored year if user doesn't specify
+    setYearInput("");      // leave blank; placeholder shows year_start
     setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
   }, []);
 
-  // Search resolves: model is known, year still needed
+  // Search resolves: generation fully known, default to year_start
   function handleSearchSelect(model: CarModel) {
     setSelectedModel(model);
-    setFinalYear("");
+    setFinalYear(String(model.year_start));  // default; user can optionally narrow
     setYearInput("");
     setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
     setSearchQuery("");
@@ -256,12 +256,13 @@ export function AddCarForm({ userId }: { userId: string }) {
 
   function handleYearInput(val: string) {
     setYearInput(val);
-    const yr = parseInt(val, 10);
-    if (!isNaN(yr) && yr >= 1885 && yr <= new Date().getFullYear() + 2) {
-      setFinalYear(val);
-    } else {
-      setFinalYear("");
+    if (!val.trim()) {
+      // User cleared the field — revert to generation's start year as stored default
+      setFinalYear(selectedModel ? String(selectedModel.year_start) : "");
+      return;
     }
+    const yr = parseInt(val, 10);
+    if (!isNaN(yr)) setFinalYear(val);
   }
 
   async function handlePhotos(files: FileList | null) {
@@ -343,8 +344,8 @@ export function AddCarForm({ userId }: { userId: string }) {
                   </p>
                   <p className="text-xs text-ink/40">
                     {yearLabel(selectedModel)}
-                    {finalYear && (
-                      <span className="ml-1.5 text-ink/60 font-medium">· {finalYear}</span>
+                    {yearInput && (
+                      <span className="ml-1.5 text-ink/60 font-medium">· {yearInput}</span>
                     )}
                   </p>
                 </div>
@@ -355,52 +356,51 @@ export function AddCarForm({ userId }: { userId: string }) {
               </button>
             </div>
 
-            {/* Year — always shown; pre-filled for cascade path, empty for search path */}
+            {/* Year — optional, constrained to generation range */}
             <div>
-              <label className="text-xs text-ink/50 mb-1 block">Year *</label>
+              <label className="text-xs text-ink/50 mb-1 block">
+                Year <span className="text-ink/30">(optional)</span>
+              </label>
               <input
                 type="number"
                 value={yearInput}
                 onChange={(e) => handleYearInput(e.target.value)}
                 placeholder={String(selectedModel.year_start)}
                 min={selectedModel.year_start}
-                max={selectedModel.year_end ?? new Date().getFullYear() + 2}
+                max={selectedModel.year_end ?? new Date().getFullYear()}
                 className="input-field w-full"
-                autoFocus={!yearInput}
               />
               <p className="text-xs text-ink/30 mt-1">
                 {selectedModel.generation}: {yearLabel(selectedModel)}
               </p>
             </div>
 
-            {/* Step 4 — Engine (shown once year is known) */}
-            {finalYear && (
-              <div>
-                <label className="text-xs text-ink/50 mb-1 block">Engine</label>
-                {selectedModel.engines.length > 0 ? (
-                  <div className="relative">
-                    <select
-                      value={selectedEngine}
-                      onChange={(e) => setSelectedEngine(e.target.value)}
-                      className="input-field w-full appearance-none pr-8"
-                    >
-                      <option value="">Select engine… (optional)</option>
-                      {selectedModel.engines.map((eng) => (
-                        <option key={eng} value={eng}>{eng}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
-                  </div>
-                ) : (
-                  <input
+            {/* Engine — shown immediately once generation is confirmed */}
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Engine</label>
+              {selectedModel.engines.length > 0 ? (
+                <div className="relative">
+                  <select
                     value={selectedEngine}
                     onChange={(e) => setSelectedEngine(e.target.value)}
-                    placeholder="e.g. M20B25 (optional)"
-                    className="input-field w-full"
-                  />
-                )}
-              </div>
-            )}
+                    className="input-field w-full appearance-none pr-8"
+                  >
+                    <option value="">Select engine… (optional)</option>
+                    {selectedModel.engines.map((eng) => (
+                      <option key={eng} value={eng}>{eng}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                </div>
+              ) : (
+                <input
+                  value={selectedEngine}
+                  onChange={(e) => setSelectedEngine(e.target.value)}
+                  placeholder="e.g. M20B25 (optional)"
+                  className="input-field w-full"
+                />
+              )}
+            </div>
           </div>
         )}
 
