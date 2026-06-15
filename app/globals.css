@@ -4,7 +4,7 @@
 
 @layer base {
   html {
-    background-color: #F6F6F4;
+    background-color: #FBFAF7;
     color: #111111;
   }
 
@@ -15,7 +15,8 @@
 
 @layer components {
   .input-field {
-    @apply bg-card rounded-xl px-3 py-3 text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20 transition-shadow;
+    /* font-size must be ≥ 16px (text-base) to prevent iOS auto-zoom on focus */
+    @apply bg-card rounded-xl px-3 py-3 text-base placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20 transition-shadow;
   }
 
   /* Glass surface — use ONLY over photography, never over flat backgrounds */
@@ -27,6 +28,12 @@
 }
 
 @layer utilities {
+  /* ── Safe-area nav padding ──────────────────────────────────────────────── */
+  /* Matches BottomNav height (4rem) + iPhone home indicator clearance        */
+  .pb-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
   /* ── Animations ─────────────────────────────────────────────────────────── */
 
   /* Page-level fade-in on mount (250ms) */

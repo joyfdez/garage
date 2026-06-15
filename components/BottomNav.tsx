@@ -40,7 +40,10 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-paper border-t border-ink/8">
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-paper border-t border-ink/8"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
       <ul className="flex h-16 items-stretch">
         {nav.map(({ href, label, icon: Icon }) => {
           const active = isNavActive(href, pathname);
