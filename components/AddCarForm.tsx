@@ -254,15 +254,9 @@ export function AddCarForm({ userId }: { userId: string }) {
     setSearchResults([]);
   }
 
-  function handleYearInput(val: string) {
+  function handleYearSelect(val: string) {
     setYearInput(val);
-    if (!val.trim()) {
-      // User cleared the field — revert to generation's start year as stored default
-      setFinalYear(selectedModel ? String(selectedModel.year_start) : "");
-      return;
-    }
-    const yr = parseInt(val, 10);
-    if (!isNaN(yr)) setFinalYear(val);
+    setFinalYear(val || (selectedModel ? String(selectedModel.year_start) : ""));
   }
 
   async function handlePhotos(files: FileList | null) {
@@ -356,23 +350,27 @@ export function AddCarForm({ userId }: { userId: string }) {
               </button>
             </div>
 
-            {/* Year — optional, constrained to generation range */}
+            {/* Year — optional dropdown, only valid years for this generation */}
             <div>
               <label className="text-xs text-ink/50 mb-1 block">
                 Year <span className="text-ink/30">(optional)</span>
               </label>
-              <input
-                type="number"
-                value={yearInput}
-                onChange={(e) => handleYearInput(e.target.value)}
-                placeholder={String(selectedModel.year_start)}
-                min={selectedModel.year_start}
-                max={selectedModel.year_end ?? new Date().getFullYear()}
-                className="input-field w-full"
-              />
-              <p className="text-xs text-ink/30 mt-1">
-                {selectedModel.generation}: {yearLabel(selectedModel)}
-              </p>
+              <div className="relative">
+                <select
+                  value={yearInput}
+                  onChange={(e) => handleYearSelect(e.target.value)}
+                  className="input-field w-full appearance-none pr-8"
+                >
+                  <option value="">Year (optional)</option>
+                  {Array.from(
+                    { length: (selectedModel.year_end ?? new Date().getFullYear()) - selectedModel.year_start + 1 },
+                    (_, i) => selectedModel.year_start + i
+                  ).map((yr) => (
+                    <option key={yr} value={String(yr)}>{yr}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
             </div>
 
             {/* Engine — shown immediately once generation is confirmed */}
