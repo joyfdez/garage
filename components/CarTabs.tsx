@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Gauge } from "lucide-react";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 
 type EventType = "build" | "fix";
 
@@ -15,6 +16,8 @@ interface CarEvent {
   details: { problem?: string; diagnosis?: string; solution?: string } | null;
   event_date: string;
   photos: { id: string; storage_path: string }[];
+  mileage_value: number | null;
+  mileage_unit: string | null;
 }
 
 interface Photo {
@@ -29,6 +32,7 @@ interface CarTabsProps {
   events: CarEvent[];
   photos: Photo[];
   supabaseUrl: string;
+  viewerUnit?: MileageUnit;
 }
 
 type Tab = "timeline" | "mods" | "fixes" | "gallery";
@@ -58,14 +62,23 @@ function EventCard({
   carSlug,
   supabaseUrl,
   index,
+  viewerUnit = "km",
 }: {
   event: CarEvent;
   carSlug: string;
   supabaseUrl: string;
   index: number;
+  viewerUnit?: MileageUnit;
 }) {
   const coverPhoto = event.photos[0];
   const isFix = event.type === "fix";
+
+  const displayMileage = event.mileage_value
+    ? formatMileage(
+        convertMileage(event.mileage_value, (event.mileage_unit ?? "km") as MileageUnit, viewerUnit),
+        viewerUnit
+      )
+    : null;
 
   return (
     <Link
@@ -108,6 +121,12 @@ function EventCard({
             {!isFix && event.description && (
               <p className="text-ink-muted text-sm mt-2 line-clamp-2">{event.description}</p>
             )}
+            {displayMileage && (
+              <p className="flex items-center gap-1 text-xs text-ink/40 mt-2">
+                <Gauge size={11} />
+                {displayMileage}
+              </p>
+            )}
           </div>
         )}
 
@@ -133,6 +152,12 @@ function EventCard({
             )}
             {!isFix && event.description && (
               <p className="text-ink-muted text-sm mt-1 line-clamp-2">{event.description}</p>
+            )}
+            {displayMileage && (
+              <p className="flex items-center gap-1 text-xs text-ink/40 mt-1">
+                <Gauge size={11} />
+                {displayMileage}
+              </p>
             )}
           </>
         )}
@@ -168,7 +193,7 @@ function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean })
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl }: CarTabsProps) {
+export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km" }: CarTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
 
   const buildEvents = events.filter((e) => e.type === "build");
@@ -229,7 +254,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl }: CarTa
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {events.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
                 ))}
               </div>
         )}
@@ -239,7 +264,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl }: CarTa
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {buildEvents.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
                 ))}
               </div>
         )}
@@ -249,7 +274,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl }: CarTa
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {fixEvents.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
                 ))}
               </div>
         )}

@@ -20,6 +20,7 @@ export default async function EditCarPage({
     .select(`
       id, slug, year, visibility, nickname, cover_photo_path,
       engine, transmission, color, location, current_owner_id, model_id,
+      fuel, drivetrain, horsepower, body_type,
       custom_make, custom_model, custom_generation,
       model:car_models(make, model, generation, engines)
     `)
@@ -60,6 +61,10 @@ export default async function EditCarPage({
     custom_make: car.custom_make,
     custom_model: car.custom_model,
     custom_generation: car.custom_generation,
+    fuel: (car as { fuel?: string | null }).fuel ?? null,
+    drivetrain: (car as { drivetrain?: string | null }).drivetrain ?? null,
+    horsepower: (car as { horsepower?: number | null }).horsepower ?? null,
+    body_type: (car as { body_type?: string | null }).body_type ?? null,
   };
 
   const photos: PhotoItem[] = (rawPhotos ?? []).map((p) => ({

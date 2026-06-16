@@ -28,13 +28,18 @@ export default async function SellCarPage({
   if (!car || car.current_owner_id !== user.id) notFound();
 
   // Only show this page if there's an active (unsold) ownership
-  const { data: activeOwnership } = await supabase
-    .from("ownerships")
-    .select("id, currency")
-    .eq("car_id", car.id)
-    .eq("user_id", user.id)
-    .is("end_date", null)
-    .maybeSingle();
+  const [ownershipResult, profileResult] = await Promise.all([
+    supabase
+      .from("ownerships")
+      .select("id, currency")
+      .eq("car_id", car.id)
+      .eq("user_id", user.id)
+      .is("end_date", null)
+      .maybeSingle(),
+    supabase.from("profiles").select("mileage_unit").eq("id", user.id).single(),
+  ]);
+  const { data: activeOwnership } = ownershipResult;
+  const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
 
   if (!activeOwnership) redirect(`/car/${slug}`);
 
@@ -65,6 +70,7 @@ export default async function SellCarPage({
         carId={car.id}
         carName={carName}
         purchaseCurrency={activeOwnership.currency ?? "EUR"}
+        preferredUnit={preferredUnit}
       />
     </div>
   );

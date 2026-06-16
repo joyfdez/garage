@@ -47,6 +47,13 @@ export async function createCar(
   const visibility = (formData.get("visibility") as string) === "private" ? "private" : "public";
   const vin = (formData.get("vin") as string)?.trim() || null;
 
+  const fuel = (formData.get("fuel") as string)?.trim() || null;
+  const drivetrain = (formData.get("drivetrain") as string)?.trim() || null;
+  const horsepowerRaw = parseInt(formData.get("horsepower") as string, 10);
+  const horsepower = isNaN(horsepowerRaw) || horsepowerRaw <= 0 ? null : horsepowerRaw;
+  const bodyType = (formData.get("body_type") as string)?.trim() || null;
+  const acquisitionCondition = (formData.get("acquisition_condition") as string)?.trim() || null;
+
   if (!modelId && (!customMake || !customModel)) {
     return { error: "Select a car model or fill in make and model." };
   }
@@ -91,6 +98,11 @@ export async function createCar(
       p_purchase_price:        purchasePrice,
       p_purchase_price_public: purchasePricePublic,
       p_currency:              currency,
+      p_fuel:                  fuel,
+      p_drivetrain:            drivetrain,
+      p_horsepower:            horsepower,
+      p_body_type:             bodyType,
+      p_acquisition_condition: acquisitionCondition,
     }
   );
 
@@ -156,6 +168,7 @@ export async function updateCar(
     return { error: "Enter a valid year." };
   }
 
+  const hpRaw = parseInt(formData.get("horsepower") as string, 10);
   const updates: Record<string, unknown> = {
     year: rawYear,
     engine: (formData.get("engine") as string)?.trim() || null,
@@ -164,6 +177,10 @@ export async function updateCar(
     nickname: (formData.get("nickname") as string)?.trim() || null,
     location: (formData.get("location") as string)?.trim() || null,
     visibility: (formData.get("visibility") as string) === "private" ? "private" : "public",
+    fuel: (formData.get("fuel") as string)?.trim() || null,
+    drivetrain: (formData.get("drivetrain") as string)?.trim() || null,
+    horsepower: isNaN(hpRaw) || hpRaw <= 0 ? null : hpRaw,
+    body_type: (formData.get("body_type") as string)?.trim() || null,
   };
 
   if (!existing.model_id) {
@@ -282,9 +299,20 @@ export async function markAsSold(
   const salePricePublic = formData.get("sale_price_public") === "true";
   const currency = (formData.get("currency") as string)?.trim() || "EUR";
 
+  const saleMileageRaw = parseInt(formData.get("sale_mileage_value") as string, 10);
+  const saleMileageValue = isNaN(saleMileageRaw) || saleMileageRaw <= 0 ? null : saleMileageRaw;
+  const saleMileageUnit = (formData.get("sale_mileage_unit") as string)?.trim() || "km";
+
   const { error } = await supabase
     .from("ownerships")
-    .update({ end_date: saleDate, sale_price: salePrice, sale_price_public: salePricePublic, currency })
+    .update({
+      end_date: saleDate,
+      sale_price: salePrice,
+      sale_price_public: salePricePublic,
+      currency,
+      sale_mileage_value: saleMileageValue,
+      sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
+    })
     .eq("id", ownership.id);
 
   if (error) return { error: "Failed to update. Please try again." };

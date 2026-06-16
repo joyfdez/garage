@@ -61,6 +61,10 @@ export async function createEvent(
 
   const details = type === "fix" ? { problem, diagnosis, solution } : null;
 
+  const mileageValueRaw = parseInt(formData.get("mileage_value") as string, 10);
+  const mileageValue = isNaN(mileageValueRaw) || mileageValueRaw <= 0 ? null : mileageValueRaw;
+  const mileageUnit = (formData.get("mileage_unit") as string)?.trim() || "km";
+
   const { data: event, error: eventError } = await supabase
     .from("car_events")
     .insert({
@@ -71,6 +75,8 @@ export async function createEvent(
       description,
       details,
       event_date: eventDate,
+      mileage_value: mileageValue,
+      mileage_unit: mileageValue ? mileageUnit : null,
     })
     .select("id")
     .single();

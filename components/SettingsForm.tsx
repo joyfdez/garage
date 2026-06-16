@@ -26,6 +26,7 @@ export interface ProfileForSettings {
   birthday: string | null;
   avatar_url: string | null;
   cover_photo_path: string | null;
+  mileage_unit: "km" | "mi";
 }
 
 const GENDERS = ["", "Male", "Female", "Non-binary", "Other", "Prefer not to say"];
@@ -365,6 +366,22 @@ export function SettingsForm({
                 <label className="text-xs text-ink/50 mb-1 block">Birthday</label>
                 <input name="birthday" type="date" defaultValue={profile.birthday ?? ""}
                   className="input-field w-full" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-2 block">Mileage units</label>
+              <div className="flex gap-2">
+                {(["km", "mi"] as const).map((u) => (
+                  <label key={u} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="mileage_unit" value={u}
+                      defaultChecked={profile.mileage_unit === u}
+                      className="sr-only peer" />
+                    <span className="px-4 py-2 rounded-xl text-sm font-medium border border-card bg-card text-ink/50 peer-checked:bg-ink peer-checked:text-paper peer-checked:border-ink transition-colors">
+                      {u === "km" ? "km — kilometres" : "mi — miles"}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 

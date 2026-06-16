@@ -10,14 +10,17 @@ export function MarkAsSoldForm({
   carId,
   carName,
   purchaseCurrency,
+  preferredUnit = "km",
 }: {
   carId: string;
   carName: string;
   purchaseCurrency: string;
+  preferredUnit?: "km" | "mi";
 }) {
   const [state, action, pending] = useActionState<CarState, FormData>(markAsSold, null);
   const [pricePublic, setPricePublic] = useState(false);
   const [navigating, setNavigating] = useState(false);
+  const [saleMileageUnit, setSaleMileageUnit] = useState<"km" | "mi">(preferredUnit);
   const router = useRouter();
   const lockedCurrency = purchaseCurrency || "EUR";
 
@@ -46,6 +49,39 @@ export function MarkAsSoldForm({
           max={today}
           className="input-field w-full"
         />
+      </div>
+
+      <div>
+        <label className="text-xs text-ink/50 mb-1 block">
+          Odometer at sale <span className="text-ink/30">(optional)</span>
+        </label>
+        <div className="flex gap-2">
+          <input
+            name="sale_mileage_value"
+            type="number"
+            min={1}
+            max={9999999}
+            placeholder="120000"
+            className="input-field flex-1"
+          />
+          <div className="flex rounded-xl overflow-hidden border border-card text-sm font-medium">
+            {(["km", "mi"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                onClick={() => setSaleMileageUnit(u)}
+                className={`px-3 py-3 transition-colors ${
+                  saleMileageUnit === u
+                    ? "bg-ink text-paper"
+                    : "bg-card text-ink/50 hover:bg-ink/10"
+                }`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+        <input type="hidden" name="sale_mileage_unit" value={saleMileageUnit} />
       </div>
 
       <div className="space-y-2">

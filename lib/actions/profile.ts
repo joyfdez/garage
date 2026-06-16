@@ -51,17 +51,20 @@ export async function updateProfile(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
+  const mileageUnit = (formData.get("mileage_unit") as string) === "mi" ? "mi" : "km";
+
   const { error } = await supabase
     .from("profiles")
     .update({
-      display_name: (formData.get("display_name") as string)?.trim() || null,
-      first_name:   (formData.get("first_name")   as string)?.trim() || null,
-      last_name:    (formData.get("last_name")     as string)?.trim() || null,
-      location:     (formData.get("location")      as string)?.trim() || null,
-      country:      (formData.get("country")       as string)?.trim() || null,
-      bio:          (formData.get("bio")           as string)?.trim() || null,
-      gender:       (formData.get("gender")        as string) || null,
-      birthday:     (formData.get("birthday")      as string) || null,
+      display_name:  (formData.get("display_name") as string)?.trim() || null,
+      first_name:    (formData.get("first_name")   as string)?.trim() || null,
+      last_name:     (formData.get("last_name")     as string)?.trim() || null,
+      location:      (formData.get("location")      as string)?.trim() || null,
+      country:       (formData.get("country")       as string)?.trim() || null,
+      bio:           (formData.get("bio")           as string)?.trim() || null,
+      gender:        (formData.get("gender")        as string) || null,
+      birthday:      (formData.get("birthday")      as string) || null,
+      mileage_unit:  mileageUnit,
     })
     .eq("id", user.id);
 

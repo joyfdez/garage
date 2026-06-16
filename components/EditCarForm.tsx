@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Star, X, Camera } from "lucide-react";
+import { Globe, Lock, Star, X, Camera, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   updateCar,
@@ -14,6 +14,9 @@ import {
 } from "@/lib/actions/car";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
+import {
+  FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS, TRANSMISSION_OPTIONS,
+} from "@/lib/car-options";
 
 export interface CarForEdit {
   id: string;
@@ -34,6 +37,10 @@ export interface CarForEdit {
   custom_make: string | null;
   custom_model: string | null;
   custom_generation: string | null;
+  fuel: string | null;
+  drivetrain: string | null;
+  horsepower: number | null;
+  body_type: string | null;
 }
 
 export interface PhotoItem {
@@ -255,11 +262,60 @@ export function EditCarForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <label className="text-xs text-ink/50 mb-1 block">Fuel</label>
+              <div className="relative">
+                <select name="fuel" defaultValue={car.fuel ?? ""} className="input-field w-full appearance-none pr-8">
+                  <option value="">Fuel type…</option>
+                  {FUEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Body</label>
+              <div className="relative">
+                <select name="body_type" defaultValue={car.body_type ?? ""} className="input-field w-full appearance-none pr-8">
+                  <option value="">Body type…</option>
+                  {BODY_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Drivetrain</label>
+              <div className="relative">
+                <select name="drivetrain" defaultValue={car.drivetrain ?? ""} className="input-field w-full appearance-none pr-8">
+                  <option value="">Drivetrain…</option>
+                  {DRIVETRAIN_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+            <div>
               <label className="text-xs text-ink/50 mb-1 block">Transmission</label>
+              <div className="relative">
+                <select name="transmission" defaultValue={car.transmission ?? ""} className="input-field w-full appearance-none pr-8">
+                  <option value="">Gearbox…</option>
+                  {TRANSMISSION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Horsepower</label>
               <input
-                name="transmission"
-                defaultValue={car.transmission ?? ""}
-                placeholder="5-speed manual"
+                name="horsepower"
+                type="number"
+                min={1}
+                max={5000}
+                defaultValue={car.horsepower ?? ""}
+                placeholder="240"
                 className="input-field w-full"
               />
             </div>

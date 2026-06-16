@@ -16,11 +16,20 @@ export default async function AddEventPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: car } = await supabase
-    .from("cars")
-    .select("id, slug, year, current_owner_id, model:car_models(make, model, generation), custom_make, custom_model")
-    .eq("slug", slug)
-    .single();
+  const [carResult, profileResult] = await Promise.all([
+    supabase
+      .from("cars")
+      .select("id, slug, year, current_owner_id, model:car_models(make, model, generation), custom_make, custom_model")
+      .eq("slug", slug)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("mileage_unit")
+      .eq("id", user.id)
+      .single(),
+  ]);
+  const { data: car } = carResult;
+  const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
 
   if (!car) notFound();
   if (car.current_owner_id !== user.id) notFound();
@@ -50,7 +59,7 @@ export default async function AddEventPage({
         </div>
       </div>
 
-      <AddEventForm carSlug={slug} userId={user.id} />
+      <AddEventForm carSlug={slug} userId={user.id} preferredUnit={preferredUnit} />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, Gauge } from "lucide-react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 import { ShareButton } from "@/components/ShareButton";
 import { PhotoGallery } from "@/components/PhotoGallery";
 
@@ -102,12 +103,19 @@ export default async function EventDetailPage({
   const isOwner = user?.id === car.current_owner_id;
   if (car.visibility === "private" && !isOwner) notFound();
 
-  const { data: event } = await supabase
-    .from("car_events")
-    .select("id, type, title, description, details, event_date")
-    .eq("id", id)
-    .eq("car_id", car.id)
-    .single();
+  const [eventResult, profileResult] = await Promise.all([
+    supabase
+      .from("car_events")
+      .select("id, type, title, description, details, event_date, mileage_value, mileage_unit")
+      .eq("id", id)
+      .eq("car_id", car.id)
+      .single(),
+    user
+      ? supabase.from("profiles").select("mileage_unit").eq("id", user.id).single()
+      : Promise.resolve({ data: null }),
+  ]);
+  const { data: event } = eventResult;
+  const viewerUnit: MileageUnit = profileResult.data?.mileage_unit === "mi" ? "mi" : "km";
 
   if (!event) notFound();
 
@@ -135,6 +143,17 @@ export default async function EventDetailPage({
   } | null;
   const coverPhoto = photos?.[0];
 
+  const displayMileage = (event as { mileage_value?: number | null }).mileage_value
+    ? formatMileage(
+        convertMileage(
+          (event as { mileage_value: number }).mileage_value,
+          ((event as { mileage_unit?: string | null }).mileage_unit ?? "km") as MileageUnit,
+          viewerUnit
+        ),
+        viewerUnit
+      )
+    : null;
+
   return (
     <div className="pb-24">
       {/* Cover photo */}
@@ -157,8 +176,8 @@ export default async function EventDetailPage({
           {car.year} {make} {model}
         </Link>
 
-        {/* Type badge + date */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* Type badge + date + mileage */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <span
             className={`text-xs font-medium px-2.5 py-1 rounded-full ${
               event.type === "build"
@@ -176,6 +195,12 @@ export default async function EventDetailPage({
               year: "numeric",
             })}
           </span>
+          {displayMileage && (
+            <span className="text-xs text-ink/30 flex items-center gap-1">
+              <Gauge size={11} />
+              {displayMileage}
+            </span>
+          )}
         </div>
 
         {/* Title */}

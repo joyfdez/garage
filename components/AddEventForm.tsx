@@ -18,9 +18,11 @@ type EventType = "build" | "fix";
 export function AddEventForm({
   carSlug,
   userId,
+  preferredUnit = "km",
 }: {
   carSlug: string;
   userId: string;
+  preferredUnit?: "km" | "mi";
 }) {
   const [state, action, pending] = useActionState<EventState, FormData>(
     createEvent,
@@ -33,6 +35,7 @@ export function AddEventForm({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [mileageUnit, setMileageUnit] = useState<"km" | "mi">(preferredUnit);
 
   useEffect(() => {
     if (state && "carSlug" in state) {
@@ -204,6 +207,40 @@ export function AddEventForm({
           </div>
         </div>
       )}
+
+      {/* Mileage */}
+      <div>
+        <label className="text-xs text-ink/50 mb-1 block">
+          Odometer <span className="text-ink/30">(optional)</span>
+        </label>
+        <div className="flex gap-2">
+          <input
+            name="mileage_value"
+            type="number"
+            min={1}
+            max={9999999}
+            placeholder="85000"
+            className="input-field flex-1"
+          />
+          <div className="flex rounded-xl overflow-hidden border border-card text-sm font-medium">
+            {(["km", "mi"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                onClick={() => setMileageUnit(u)}
+                className={`px-3 py-3 transition-colors ${
+                  mileageUnit === u
+                    ? "bg-ink text-paper"
+                    : "bg-card text-ink/50 hover:bg-ink/10"
+                }`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+        <input type="hidden" name="mileage_unit" value={mileageUnit} />
+      </div>
 
       {/* Date */}
       <div>

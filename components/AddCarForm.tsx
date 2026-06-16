@@ -14,6 +14,10 @@ import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
 import { debounce } from "@/lib/utils/debounce";
+import {
+  FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS,
+  TRANSMISSION_OPTIONS, ACQUISITION_OPTIONS,
+} from "@/lib/car-options";
 
 interface UploadedPhoto {
   path: string;
@@ -529,8 +533,54 @@ export function AddCarForm({ userId }: { userId: string }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <label className="text-xs text-ink/50 mb-1 block">Fuel</label>
+              <div className="relative">
+                <select name="fuel" className="input-field w-full appearance-none pr-8">
+                  <option value="">Fuel type…</option>
+                  {FUEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Body</label>
+              <div className="relative">
+                <select name="body_type" className="input-field w-full appearance-none pr-8">
+                  <option value="">Body type…</option>
+                  {BODY_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Drivetrain</label>
+              <div className="relative">
+                <select name="drivetrain" className="input-field w-full appearance-none pr-8">
+                  <option value="">Drivetrain…</option>
+                  {DRIVETRAIN_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+            <div>
               <label className="text-xs text-ink/50 mb-1 block">Transmission</label>
-              <input name="transmission" placeholder="5-speed manual" className="input-field w-full" />
+              <div className="relative">
+                <select name="transmission" className="input-field w-full appearance-none pr-8">
+                  <option value="">Gearbox…</option>
+                  {TRANSMISSION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Horsepower</label>
+              <input name="horsepower" type="number" min={1} max={5000} placeholder="240" className="input-field w-full" />
             </div>
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Color</label>
@@ -619,6 +669,16 @@ export function AddCarForm({ userId }: { userId: string }) {
             Purchase details (optional)
           </summary>
           <div className="mt-3 space-y-3">
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Acquired as</label>
+              <div className="relative">
+                <select name="acquisition_condition" className="input-field w-full appearance-none pr-8">
+                  <option value="">Condition when acquired…</option>
+                  {ACQUISITION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-ink/50 mb-1 block">Purchase date</label>
