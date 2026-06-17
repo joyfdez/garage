@@ -121,7 +121,7 @@ export function MarkAsSoldForm({
       <button
         type="submit"
         disabled={pending || navigating}
-        className="w-full bg-ink text-background font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/80 transition-colors disabled:opacity-50"
+        className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/80 transition-colors disabled:opacity-50"
       >
         {pending || navigating ? "Saving…" : `Mark ${carName} as sold`}
       </button>

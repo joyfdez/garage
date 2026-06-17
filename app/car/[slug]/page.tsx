@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/ShareButton";
 import { CarTabs } from "@/components/CarTabs";
-import { ParallaxHero } from "@/components/ParallaxHero";
+import { CarHero, type HeroPhoto } from "@/components/CarHero";
 import {
   FUEL_OPTIONS, BODY_TYPE_OPTIONS, DRIVETRAIN_OPTIONS, ACQUISITION_OPTIONS,
 } from "@/lib/car-options";
@@ -174,9 +174,14 @@ export default async function CarPage({
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
-  const coverUrl = car.cover_photo_path
-    ? `${supabaseUrl}/storage/v1/object/public/car-photos/${car.cover_photo_path}`
-    : null;
+
+  // Hero carousel: all non-event photos ordered by position (cover is position 0)
+  const heroPhotos: HeroPhoto[] = (allPhotos ?? [])
+    .filter((p) => !p.event_id)
+    .map((p) => ({
+      id: p.id,
+      url: `${supabaseUrl}/storage/v1/object/public/car-photos/${p.storage_path}`,
+    }));
 
   // Metadata line in hero: engine · transmission · color
   const heroSpecs = [car.engine, car.transmission, car.color].filter(Boolean);
@@ -210,26 +215,13 @@ export default async function CarPage({
   return (
     <div className="bg-paper min-h-dvh page-enter">
 
-      {/* ── HERO ── full-bleed, ~70svh ─────────────────────────────────────── */}
-      <div
-        className="relative overflow-hidden"
-        style={{ height: "70svh", minHeight: "340px" }}
+      {/* ── HERO ── swipeable photo carousel, ~70svh ───────────────────────── */}
+      <CarHero
+        photos={heroPhotos}
+        alt={`${car.year} ${make} ${model}`}
+        placeholderYear={car.year}
       >
-        {coverUrl ? (
-          <ParallaxHero
-            src={coverUrl}
-            alt={`${car.year} ${make} ${model}`}
-          />
-        ) : (
-          /* Placeholder when no cover photo */
-          <div className="absolute inset-0 bg-racing-green flex items-end pb-6 px-5">
-            <span className="font-display font-extrabold text-white/8 text-[12vw] leading-none select-none pointer-events-none">
-              {car.year}
-            </span>
-          </div>
-        )}
-
-        {/* Gradient scrim — darkens bottom of photo for legibility; no blur */}
+        {/* Gradient scrim — darkens bottom of photo for legibility */}
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
@@ -298,7 +290,7 @@ export default async function CarPage({
             </div>
           )}
         </div>
-      </div>
+      </CarHero>
 
       {/* ── Below-hero: nickname · ownership · actions ──────────────────────── */}
       <div className="px-5 pt-4 pb-2 fade-rise" style={{ "--rise-delay": "40ms" } as React.CSSProperties}>

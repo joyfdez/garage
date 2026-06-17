@@ -370,7 +370,7 @@ export function EditCarForm({
                 type="button"
                 onClick={() => setIsPrivate(false)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  !isPrivate ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                  !isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
               >
                 <Globe size={13} />Public
@@ -379,7 +379,7 @@ export function EditCarForm({
                 type="button"
                 onClick={() => setIsPrivate(true)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  isPrivate ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                  isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
               >
                 <Lock size={13} />Private
@@ -427,7 +427,7 @@ export function EditCarForm({
                   type="button"
                   onClick={() => setPurchasePricePublic(true)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    purchasePricePublic ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                    purchasePricePublic ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                   }`}
                 >
                   <Globe size={13} />Public
@@ -436,7 +436,7 @@ export function EditCarForm({
                   type="button"
                   onClick={() => setPurchasePricePublic(false)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    !purchasePricePublic ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                    !purchasePricePublic ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                   }`}
                 >
                   <Lock size={13} />Private
