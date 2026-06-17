@@ -75,6 +75,7 @@ export async function createCar(
   const purchasePrice = purchasePriceRaw ? parseFloat(purchasePriceRaw) : null;
   const purchasePricePublic = formData.get("purchase_price_public") === "true";
   const currency = (formData.get("currency") as string)?.trim() || "EUR";
+  const colorBase = (formData.get("color_base") as string)?.trim() || null;
 
   // Atomic: car + ownership are created in one transaction via a Postgres function.
   // If either insert fails, neither is committed — no orphan cars possible.
@@ -140,6 +141,11 @@ export async function createCar(
     }
   }
 
+  // Store color_base (not in RPC params — update the freshly created car row)
+  if (colorBase) {
+    await supabase.from("cars").update({ color_base: colorBase }).eq("id", car.id);
+  }
+
   // Store purchase mileage on the ownership the RPC already created
   const purchaseMileageRaw = parseInt(formData.get("purchase_mileage_value") as string, 10);
   const purchaseMileageValue = isNaN(purchaseMileageRaw) || purchaseMileageRaw <= 0 ? null : purchaseMileageRaw;
@@ -196,6 +202,7 @@ export async function updateCar(
     drivetrain: (formData.get("drivetrain") as string)?.trim() || null,
     horsepower: isNaN(hpRaw) || hpRaw <= 0 ? null : hpRaw,
     body_type: (formData.get("body_type") as string)?.trim() || null,
+    color_base: (formData.get("color_base") as string)?.trim() || null,
   };
 
   if (!existing.model_id) {

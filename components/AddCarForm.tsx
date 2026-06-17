@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
+import { ColorPicker } from "@/components/ColorPicker";
 import { debounce } from "@/lib/utils/debounce";
 import {
   FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS,
@@ -207,6 +208,7 @@ export function AddCarForm({
   const [rawMileage, setRawMileage] = useState("");
   const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(preferredUnit);
   const currencySymbol = CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
+  const [colorBase, setColorBase] = useState<string | null>(null);
 
   function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
   function formatInt(raw: string) {
@@ -590,13 +592,19 @@ export function AddCarForm({
             </div>
           </div>
 
+          <div>
+            <label className="text-xs text-ink/50 mb-2 block">Color</label>
+            <ColorPicker value={colorBase} onChange={setColorBase} />
+            <input type="hidden" name="color_base" value={colorBase ?? ""} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Horsepower</label>
               <input name="horsepower" type="number" min={1} max={5000} placeholder="240" className="input-field w-full" />
             </div>
             <div>
-              <label className="text-xs text-ink/50 mb-1 block">Color</label>
+              <label className="text-xs text-ink/50 mb-1 block">Color name</label>
               <input name="color" placeholder="Dakar Yellow" className="input-field w-full" />
             </div>
           </div>

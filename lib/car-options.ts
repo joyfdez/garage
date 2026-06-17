@@ -51,6 +51,28 @@ export const CURRENCIES = [
   { value: "JPY", symbol: "¥",   label: "JPY" },
 ] as const;
 
+export const BASE_COLORS = [
+  { value: "beige",   label: "Beige",   hex: "#C8B89A" },
+  { value: "black",   label: "Black",   hex: "#1C1C1C" },
+  { value: "blue",    label: "Blue",    hex: "#2563EB" },
+  { value: "brown",   label: "Brown",   hex: "#78492A" },
+  { value: "gold",    label: "Gold",    hex: "#C9A736" },
+  { value: "gray",    label: "Gray",    hex: "#9CA3AF" },
+  { value: "green",   label: "Green",   hex: "#16A34A" },
+  { value: "maroon",  label: "Maroon",  hex: "#7F1D1D" },
+  { value: "orange",  label: "Orange",  hex: "#EA580C" },
+  { value: "pink",    label: "Pink",    hex: "#EC4899" },
+  { value: "purple",  label: "Purple",  hex: "#9333EA" },
+  { value: "red",     label: "Red",     hex: "#DC2626" },
+  { value: "silver",  label: "Silver",  hex: "#B8BEC7" },
+  { value: "violet",  label: "Violet",  hex: "#6D28D9" },
+  { value: "white",   label: "White",   hex: "#F3F4F6" },
+  { value: "yellow",  label: "Yellow",  hex: "#FBBF24" },
+  { value: "other",   label: "Other",   hex: "#D1D5DB" },
+] as const;
+
+export type BaseColorValue = typeof BASE_COLORS[number]["value"];
+
 // Years from 2027 down to 1900 for year-picker dropdowns.
 export const YEAR_OPTIONS = Array.from(
   { length: 2027 - 1900 + 1 },

@@ -14,6 +14,7 @@ const config: Config = {
         // Magazine design system
         paper: "#FBFAF7",
         "racing-green": "#1A3A2E",
+        accent: "#FF5A1F",
         "green-bright": "#2D6A4A",
         "ink-muted": "#6B6862",
         hint: "#A8A49C",

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar } from "lucide-react";
+import { ColorPicker } from "@/components/ColorPicker";
 import { toast } from "sonner";
 import {
   updateCar,
@@ -42,6 +43,7 @@ export interface CarForEdit {
   drivetrain: string | null;
   horsepower: number | null;
   body_type: string | null;
+  color_base: string | null;
   // Ownership / purchase fields
   ownershipId?: string | null;
   purchaseDate?: string | null;
@@ -90,6 +92,7 @@ export function EditCarForm({
     car.purchaseMileageValue != null ? String(car.purchaseMileageValue) : ""
   );
   const currencySymbol = CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
+  const [colorBase, setColorBase] = useState<string | null>(car.color_base ?? null);
 
   function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
   function formatInt(raw: string) {
@@ -341,6 +344,12 @@ export function EditCarForm({
             </div>
           </div>
 
+          <div>
+            <label className="text-xs text-ink/50 mb-2 block">Color</label>
+            <ColorPicker value={colorBase} onChange={setColorBase} />
+            <input type="hidden" name="color_base" value={colorBase ?? ""} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Horsepower</label>
@@ -355,7 +364,7 @@ export function EditCarForm({
               />
             </div>
             <div>
-              <label className="text-xs text-ink/50 mb-1 block">Color</label>
+              <label className="text-xs text-ink/50 mb-1 block">Color name</label>
               <input
                 name="color"
                 defaultValue={car.color ?? ""}
