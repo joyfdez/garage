@@ -27,7 +27,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
                 block w-7 h-7 rounded-full transition-all
                 ${isLight ? "border border-ink/15" : ""}
                 ${selected
-                  ? "ring-2 ring-offset-2 ring-accent scale-110"
+                  ? "ring-2 ring-offset-2 ring-green-bright scale-110"
                   : "hover:scale-110 hover:ring-2 hover:ring-offset-1 hover:ring-ink/20"
                 }
               `}
