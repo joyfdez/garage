@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Star, X, Camera, ChevronDown } from "lucide-react";
+import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import {
   updateCar,
@@ -16,6 +16,7 @@ import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import {
   FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS, TRANSMISSION_OPTIONS,
+  CURRENCIES, YEAR_OPTIONS,
 } from "@/lib/car-options";
 
 export interface CarForEdit {
@@ -80,6 +81,21 @@ export function EditCarForm({
   const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(
     (car.purchaseMileageUnit as "km" | "mi") ?? car.preferredUnit ?? "km"
   );
+  const [year, setYear] = useState(String(car.year));
+  const [currency, setCurrency] = useState(car.purchaseCurrency ?? "EUR");
+  const [rawPrice, setRawPrice] = useState(
+    car.purchasePrice != null ? String(Math.round(car.purchasePrice)) : ""
+  );
+  const [rawMileage, setRawMileage] = useState(
+    car.purchaseMileageValue != null ? String(car.purchaseMileageValue) : ""
+  );
+  const currencySymbol = CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
+
+  function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
+  function formatInt(raw: string) {
+    const n = parseInt(raw, 10);
+    return raw && !isNaN(n) ? n.toLocaleString("en-US") : "";
+  }
 
   useEffect(() => {
     if (state && "slug" in state) {
@@ -246,15 +262,21 @@ export function EditCarForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Year *</label>
-              <input
-                name="year"
-                type="number"
-                required
-                defaultValue={car.year}
-                min={1885}
-                max={new Date().getFullYear() + 2}
-                className="input-field w-full"
-              />
+              <div className="relative">
+                <select
+                  name="year"
+                  required
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="input-field w-full appearance-none pr-8"
+                >
+                  <option value="">Select year…</option>
+                  {YEAR_OPTIONS.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Engine</label>
@@ -397,27 +419,46 @@ export function EditCarForm({
 
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
-              <input
-                name="purchase_date"
-                type="date"
-                defaultValue={car.purchaseDate ?? ""}
-                className="input-field w-full"
-              />
+              <div className="relative">
+                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
+                <input
+                  name="purchase_date"
+                  type="date"
+                  defaultValue={car.purchaseDate ?? ""}
+                  className="input-field w-full pl-9"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="text-xs text-ink/50 mb-1 block">
-                Purchase price{car.purchaseCurrency ? ` (${car.purchaseCurrency})` : ""}
-              </label>
-              <input
-                name="purchase_price"
-                type="number"
-                min={0}
-                step={100}
-                defaultValue={car.purchasePrice ?? ""}
-                placeholder="15000"
-                className="input-field w-full"
-              />
+              <label className="text-xs text-ink/50 mb-1 block">Price paid</label>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <select
+                    name="currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="input-field appearance-none pr-7 pl-3"
+                  >
+                    {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                </div>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30 pointer-events-none select-none">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatInt(rawPrice)}
+                    onChange={(e) => setRawPrice(parseDigits(e.target.value))}
+                    placeholder="0"
+                    className="input-field w-full pl-9"
+                  />
+                  <input type="hidden" name="purchase_price" value={rawPrice} />
+                </div>
+              </div>
             </div>
 
             <div>
@@ -448,14 +489,17 @@ export function EditCarForm({
             <div>
               <label className="text-xs text-ink/50 mb-1 block">Odometer at purchase</label>
               <div className="flex gap-2">
-                <input
-                  name="purchase_mileage_value"
-                  type="number"
-                  min={1}
-                  defaultValue={car.purchaseMileageValue ?? ""}
-                  placeholder="84000"
-                  className="input-field flex-1 min-w-0"
-                />
+                <div className="relative flex-1 min-w-0">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatInt(rawMileage)}
+                    onChange={(e) => setRawMileage(parseDigits(e.target.value))}
+                    placeholder="84,000"
+                    className="input-field w-full"
+                  />
+                  <input type="hidden" name="purchase_mileage_value" value={rawMileage} />
+                </div>
                 <div className="flex rounded-xl border border-ink/10 overflow-hidden text-sm font-medium">
                   {(["km", "mi"] as const).map((u) => (
                     <button

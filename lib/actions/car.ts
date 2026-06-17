@@ -140,6 +140,21 @@ export async function createCar(
     }
   }
 
+  // Store purchase mileage on the ownership the RPC already created
+  const purchaseMileageRaw = parseInt(formData.get("purchase_mileage_value") as string, 10);
+  const purchaseMileageValue = isNaN(purchaseMileageRaw) || purchaseMileageRaw <= 0 ? null : purchaseMileageRaw;
+  const purchaseMileageUnit = (formData.get("purchase_mileage_unit") as string)?.trim() || "km";
+  if (purchaseMileageValue) {
+    await supabase
+      .from("ownerships")
+      .update({
+        purchase_mileage_value: purchaseMileageValue,
+        purchase_mileage_unit: purchaseMileageUnit,
+      })
+      .eq("car_id", car.id)
+      .eq("user_id", user.id);
+  }
+
   revalidatePath("/garage");
   revalidatePath("/profile");
   return warnings.length > 0 ? { slug: car.slug, warnings } : { slug: car.slug };
@@ -205,6 +220,7 @@ export async function updateCar(
     const purchaseMileageRaw = parseInt(formData.get("purchase_mileage_value") as string, 10);
     const purchaseMileageValue = isNaN(purchaseMileageRaw) || purchaseMileageRaw <= 0 ? null : purchaseMileageRaw;
     const purchaseMileageUnit = (formData.get("purchase_mileage_unit") as string)?.trim() || "km";
+    const currency = (formData.get("currency") as string)?.trim() || null;
 
     await supabase
       .from("ownerships")
@@ -212,6 +228,7 @@ export async function updateCar(
         start_date: purchaseDate,
         purchase_price: purchasePrice,
         purchase_price_public: purchasePricePublic,
+        currency,
         purchase_mileage_value: purchaseMileageValue,
         purchase_mileage_unit: purchaseMileageValue ? purchaseMileageUnit : null,
       })

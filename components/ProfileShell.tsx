@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Car,
@@ -142,18 +142,25 @@ function CarsSection({
   previous,
   supabaseUrl,
   isOwner,
-  showBoth,
+  scrollToPrev,
 }: {
   current: CarData[];
   previous: CarData[];
   supabaseUrl: string;
   isOwner: boolean;
-  showBoth: boolean;
+  scrollToPrev: boolean;
 }) {
-  const carsToShow = showBoth ? current : current;
-  const prevToShow = showBoth ? previous : [];
+  const prevRef = useRef<HTMLDivElement>(null);
 
-  if (carsToShow.length === 0 && prevToShow.length === 0) {
+  useEffect(() => {
+    if (!scrollToPrev || !prevRef.current) return;
+    const timer = setTimeout(() => {
+      prevRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [scrollToPrev]);
+
+  if (current.length === 0 && previous.length === 0) {
     return (
       <div className="py-16 text-center">
         <p className="font-display font-bold text-base mb-1 text-ink">No cars yet</p>
@@ -177,10 +184,10 @@ function CarsSection({
 
   return (
     <div className="space-y-8">
-      {carsToShow.length > 0 && (
+      {current.length > 0 && (
         <div>
           <div className="grid grid-cols-2 gap-3">
-            {carsToShow.map((car) => (
+            {current.map((car) => (
               <ProfileCarCard key={car.slug} car={car} supabaseUrl={supabaseUrl} />
             ))}
           </div>
@@ -198,13 +205,13 @@ function CarsSection({
         </div>
       )}
 
-      {prevToShow.length > 0 && (
-        <div>
+      {previous.length > 0 && (
+        <div ref={prevRef}>
           <p className="text-[0.58rem] uppercase tracking-[0.2em] font-bold text-hint mb-3">
             Previously owned
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {prevToShow.map((car) => (
+            {previous.map((car) => (
               <ProfileCarCard key={car.slug} car={car} supabaseUrl={supabaseUrl} />
             ))}
           </div>
@@ -432,10 +439,10 @@ export function ProfileShell({
         {activeTab === "owned-now" && (
           <CarsSection
             current={currentCars}
-            previous={[]}
+            previous={previousCars}
             supabaseUrl={supabaseUrl}
             isOwner={isOwner}
-            showBoth={false}
+            scrollToPrev={false}
           />
         )}
 
@@ -445,7 +452,7 @@ export function ProfileShell({
             previous={previousCars}
             supabaseUrl={supabaseUrl}
             isOwner={isOwner}
-            showBoth={true}
+            scrollToPrev={true}
           />
         )}
 

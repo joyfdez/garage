@@ -6,7 +6,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Search, ChevronDown, Lock, Globe, X, Check, ChevronRight,
-  Eye, EyeOff, DollarSign,
+  Eye, EyeOff, Calendar,
 } from "lucide-react";
 import { createCar, CarState } from "@/lib/actions/car";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ import { type CarModel, yearLabel } from "@/components/BrowsePicker";
 import { debounce } from "@/lib/utils/debounce";
 import {
   FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS,
-  TRANSMISSION_OPTIONS, ACQUISITION_OPTIONS,
+  TRANSMISSION_OPTIONS, ACQUISITION_OPTIONS, CURRENCIES, YEAR_OPTIONS,
 } from "@/lib/car-options";
 
 interface UploadedPhoto {
@@ -162,7 +162,13 @@ function CascadePicker({
 
 // ── Main form ─────────────────────────────────────────────────────────────────
 
-export function AddCarForm({ userId }: { userId: string }) {
+export function AddCarForm({
+  userId,
+  preferredUnit = "km",
+}: {
+  userId: string;
+  preferredUnit?: "km" | "mi";
+}) {
   const [state, action, pending] = useActionState<CarState, FormData>(createCar, null);
   const router = useRouter();
   const [navigating, setNavigating] = useState(false);
@@ -197,7 +203,16 @@ export function AddCarForm({ userId }: { userId: string }) {
   const [isPrivate, setIsPrivate] = useState(false);
   const [purchasePricePublic, setPurchasePricePublic] = useState(false);
   const [currency, setCurrency] = useState("EUR");
-  const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY"];
+  const [rawPrice, setRawPrice] = useState("");
+  const [rawMileage, setRawMileage] = useState("");
+  const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(preferredUnit);
+  const currencySymbol = CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
+
+  function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
+  function formatInt(raw: string) {
+    const n = parseInt(raw, 10);
+    return raw && !isNaN(n) ? n.toLocaleString("en-US") : "";
+  }
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -356,16 +371,14 @@ export function AddCarForm({ userId }: { userId: string }) {
 
             {/* Year — optional dropdown, only valid years for this generation */}
             <div>
-              <label className="text-xs text-ink/50 mb-1 block">
-                Year <span className="text-ink/30">(optional)</span>
-              </label>
+              <label className="text-xs text-ink/50 mb-1 block">Year</label>
               <div className="relative">
                 <select
                   value={yearInput}
                   onChange={(e) => handleYearSelect(e.target.value)}
                   className="input-field w-full appearance-none pr-8"
                 >
-                  <option value="">Year (optional)</option>
+                  <option value="">Select year…</option>
                   {Array.from(
                     { length: (selectedModel.year_end ?? new Date().getFullYear()) - selectedModel.year_start + 1 },
                     (_, i) => selectedModel.year_start + i
@@ -387,7 +400,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                     onChange={(e) => setSelectedEngine(e.target.value)}
                     className="input-field w-full appearance-none pr-8"
                   >
-                    <option value="">Select engine… (optional)</option>
+                    <option value="">Select engine…</option>
                     {selectedModel.engines.map((eng) => (
                       <option key={eng} value={eng}>{eng}</option>
                     ))}
@@ -398,7 +411,7 @@ export function AddCarForm({ userId }: { userId: string }) {
                 <input
                   value={selectedEngine}
                   onChange={(e) => setSelectedEngine(e.target.value)}
-                  placeholder="e.g. M20B25 (optional)"
+                  placeholder="e.g. M20B25"
                   className="input-field w-full"
                 />
               )}
@@ -514,15 +527,15 @@ export function AddCarForm({ userId }: { userId: string }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-ink/50 mb-1 block">Year *</label>
-                <input
-                  name="year"
-                  type="number"
-                  required
-                  placeholder="1992"
-                  min={1885}
-                  max={new Date().getFullYear() + 2}
-                  className="input-field w-full"
-                />
+                <div className="relative">
+                  <select name="year" required className="input-field w-full appearance-none pr-8">
+                    <option value="">Select year…</option>
+                    {YEAR_OPTIONS.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                </div>
               </div>
               <div>
                 <label className="text-xs text-ink/50 mb-1 block">Engine</label>
@@ -666,7 +679,7 @@ export function AddCarForm({ userId }: { userId: string }) {
         <details className="group">
           <summary className="cursor-pointer flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink/70 list-none">
             <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
-            Purchase details (optional)
+            Purchase details
           </summary>
           <div className="mt-3 space-y-3">
             <div>
@@ -679,41 +692,90 @@ export function AddCarForm({ userId }: { userId: string }) {
                 <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-ink/50 mb-1 block">Purchase date</label>
-                <input name="purchase_date" type="date" className="input-field w-full" />
-              </div>
-              <div>
-                <label className="text-xs text-ink/50 mb-1 block">Price paid</label>
-                <div className="relative">
-                  <DollarSign size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
-                  <input name="purchase_price" type="number" min={0} step="any" placeholder="0"
-                    className="input-field w-full pl-7" />
-                </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
+              <div className="relative">
+                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
+                <input name="purchase_date" type="date" className="input-field w-full pl-9" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                name="currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="input-field w-24"
-              >
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Price paid</label>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <select
+                    name="currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="input-field appearance-none pr-7 pl-3"
+                  >
+                    {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                </div>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30 pointer-events-none select-none">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatInt(rawPrice)}
+                    onChange={(e) => setRawPrice(parseDigits(e.target.value))}
+                    placeholder="0"
+                    className="input-field w-full pl-9"
+                  />
+                  <input type="hidden" name="purchase_price" value={rawPrice} />
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setPurchasePricePublic((v) => !v)}
-                className={`flex items-center gap-1.5 text-xs transition-colors ${
+                className={`flex items-center gap-1.5 text-xs mt-1.5 transition-colors ${
                   purchasePricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
                 }`}
               >
                 {purchasePricePublic ? <Eye size={12} /> : <EyeOff size={12} />}
                 {purchasePricePublic ? "Price visible publicly" : "Price is private"}
               </button>
+              <input type="hidden" name="purchase_price_public" value={String(purchasePricePublic)} />
             </div>
-            <input type="hidden" name="purchase_price_public" value={String(purchasePricePublic)} />
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Odometer at purchase</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatInt(rawMileage)}
+                    onChange={(e) => setRawMileage(parseDigits(e.target.value))}
+                    placeholder="84,500"
+                    className="input-field w-full"
+                  />
+                  <input type="hidden" name="purchase_mileage_value" value={rawMileage} />
+                </div>
+                <div className="flex rounded-xl border border-ink/10 overflow-hidden text-sm font-medium">
+                  {(["km", "mi"] as const).map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => setPurchaseMileageUnit(u)}
+                      className={`px-3 py-2 transition-colors ${
+                        purchaseMileageUnit === u
+                          ? "bg-ink text-paper"
+                          : "bg-card text-ink/50 hover:text-ink"
+                      }`}
+                    >
+                      {u}
+                    </button>
+                  ))}
+                </div>
+                <input type="hidden" name="purchase_mileage_unit" value={purchaseMileageUnit} />
+              </div>
+            </div>
           </div>
         </details>
       </section>
@@ -723,7 +785,7 @@ export function AddCarForm({ userId }: { userId: string }) {
         <details className="group">
           <summary className="cursor-pointer flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink/70 list-none">
             <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
-            VIN (optional, always private)
+            VIN (always private)
           </summary>
           <div className="mt-3">
             <input name="vin" placeholder="WBA…" maxLength={17}

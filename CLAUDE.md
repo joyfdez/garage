@@ -46,6 +46,21 @@ help requests, or parts catalog in v1.** If a task seems to need them, stop and 
 - English UI copy throughout. Voice: simple, direct, garage-friendly.
   Say "Show us your build", never "Upload your vehicle modification log".
 
+## Migration workflow (standing convention)
+
+All schema changes go through the Supabase CLI. **Never tell the user to paste SQL into
+the Supabase dashboard SQL Editor.**
+
+1. Create: `supabase migration new <name>` — generates a file with a 14-digit timestamp
+   (`YYYYMMDDHHmmss_name.sql`) in `supabase/migrations/`
+2. Write the SQL in that file
+3. Apply: tell the user to run `supabase db push`
+
+Use `IF NOT EXISTS` / `IF EXISTS` / `OR REPLACE` guards in every migration so it is safe
+to inspect with `db diff` or re-run in edge cases. Never use the `_NNN_` sequence-number
+format (e.g. `20260612_001_schema.sql`) — it collapses multiple same-day files to the
+same version token and breaks per-file CLI tracking.
+
 ## Design system (from brandbook)
 
 Direction: **modern + mechanical**. Clean product design + authentic garage culture.
@@ -53,16 +68,19 @@ Inspiration: Strava, Letterboxd, Notion. NOT: luxury showroom, carbon fiber,
 neon gamer dark mode, 2005 autoparts website.
 
 Colors:
+
 - Background (warm white): `#F6F6F4`
 - Cards / secondary background: `#EDEDED`
 - Text (deep charcoal): `#111111`
 - Accent (signal orange): `#FF5A1F` — primary actions, highlights, interactive elements
 
 Typography:
+
 - **Inter** — UI, body, navigation
 - **Space Grotesk** — headings, emphasis, car titles
 
 Layout principles:
+
 - Generous whitespace ("MUCHO AIRE"), editorial/catalog feel
 - Large photography is the hero of every screen
 - Robust cards, visible technical metadata (year, engine, chassis code)
