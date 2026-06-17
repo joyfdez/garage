@@ -16,7 +16,7 @@ export default async function AddEventPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const [carResult, profileResult] = await Promise.all([
+  const [carResult, profileResult, ownershipResult] = await Promise.all([
     supabase
       .from("cars")
       .select("id, slug, year, current_owner_id, model:car_models(make, model, generation), custom_make, custom_model")
@@ -27,9 +27,17 @@ export default async function AddEventPage({
       .select("mileage_unit")
       .eq("id", user.id)
       .single(),
+    supabase
+      .from("ownerships")
+      .select("currency")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const { data: car } = carResult;
   const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
+  const carCurrency = ownershipResult.data?.currency ?? "EUR";
 
   if (!car) notFound();
   if (car.current_owner_id !== user.id) notFound();
@@ -59,7 +67,7 @@ export default async function AddEventPage({
         </div>
       </div>
 
-      <AddEventForm carSlug={slug} userId={user.id} preferredUnit={preferredUnit} />
+      <AddEventForm carSlug={slug} userId={user.id} preferredUnit={preferredUnit} carCurrency={carCurrency} />
     </div>
   );
 }

@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Clock, Plus, Gauge } from "lucide-react";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
+import { CURRENCIES } from "@/lib/car-options";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { deleteEvent } from "@/lib/actions/event";
 
 type EventType = "build" | "fix";
 
@@ -18,6 +22,7 @@ interface CarEvent {
   photos: { id: string; storage_path: string }[];
   mileage_value: number | null;
   mileage_unit: string | null;
+  amount?: number | null;
 }
 
 interface Photo {
@@ -43,6 +48,7 @@ interface CarTabsProps {
   supabaseUrl: string;
   viewerUnit?: MileageUnit;
   purchaseRecord?: PurchaseRecord;
+  carCurrency?: string;
 }
 
 type Tab = "timeline" | "mods" | "fixes" | "gallery";
@@ -73,15 +79,23 @@ function EventCard({
   supabaseUrl,
   index,
   viewerUnit = "km",
+  isOwner = false,
+  carCurrency = "EUR",
 }: {
   event: CarEvent;
   carSlug: string;
   supabaseUrl: string;
   index: number;
   viewerUnit?: MileageUnit;
+  isOwner?: boolean;
+  carCurrency?: string;
 }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const coverPhoto = event.photos[0];
   const isFix = event.type === "fix";
+  const amountSymbol = CURRENCIES.find((c) => c.value === carCurrency)?.symbol ?? carCurrency;
 
   const displayMileage = event.mileage_value
     ? formatMileage(
@@ -90,13 +104,31 @@ function EventCard({
       )
     : null;
 
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const result = await deleteEvent(event.id);
+      if (result && "error" in result) {
+        toast.error(result.error);
+        setDeleting(false);
+        setConfirming(false);
+      } else {
+        toast.success("Event deleted", { style: { borderLeft: "3px solid #1A3A2E" } });
+        router.refresh();
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+      setDeleting(false);
+      setConfirming(false);
+    }
+  }
+
   return (
-    <Link
-      href={`/car/${carSlug}/events/${event.id}`}
-      className="block group fade-rise"
+    <article
+      className="fade-rise"
       style={{ "--rise-delay": `${index * 60}ms` } as React.CSSProperties}
     >
-      <article>
+      <Link href={`/car/${carSlug}/events/${event.id}`} className="block group">
         {/* Photo — 4:3, rounded top, image scales on hover */}
         {coverPhoto && (
           <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
@@ -112,7 +144,6 @@ function EventCard({
         {/* No-photo card — bordered box */}
         {!coverPhoto && (
           <div className="rounded-card border border-ink/8 bg-white mb-3 p-4">
-            {/* Metadata inside no-photo card */}
             <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
               <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
                 {TYPE_LABELS[event.type]}
@@ -120,30 +151,34 @@ function EventCard({
               <span className="text-hint mx-1.5">·</span>
               {formatEventDate(event.event_date)}
             </p>
-
             <h3 className="font-display font-bold text-xl leading-tight text-ink">
               {event.title}
             </h3>
-
             {isFix && event.details?.problem && (
               <p className="text-ink-muted text-sm mt-2 line-clamp-2">{event.details.problem}</p>
             )}
             {!isFix && event.description && (
               <p className="text-ink-muted text-sm mt-2 line-clamp-2">{event.description}</p>
             )}
-            {displayMileage && (
-              <p className="flex items-center gap-1 text-xs text-ink/40 mt-2">
-                <Gauge size={11} />
-                {displayMileage}
-              </p>
-            )}
+            <div className="flex items-center gap-3 mt-2">
+              {displayMileage && (
+                <p className="flex items-center gap-1 text-xs text-ink/40">
+                  <Gauge size={11} />
+                  {displayMileage}
+                </p>
+              )}
+              {event.amount != null && (
+                <p className="text-xs text-ink/40">
+                  {amountSymbol}{Math.round(event.amount).toLocaleString("en-US")}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
         {/* Below-photo text (only when photo exists) */}
         {coverPhoto && (
           <>
-            {/* Metadata line — uppercase, spaced */}
             <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-2">
               <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
                 {TYPE_LABELS[event.type]}
@@ -151,28 +186,75 @@ function EventCard({
               <span className="text-hint/60">·</span>
               {formatEventDate(event.event_date)}
             </p>
-
-            {/* Title — Archivo, large */}
             <h3 className="font-display font-bold text-xl leading-tight text-ink group-hover:text-green-bright transition-colors">
               {event.title}
             </h3>
-
             {isFix && event.details?.problem && (
               <p className="text-ink-muted text-sm mt-1 line-clamp-2">{event.details.problem}</p>
             )}
             {!isFix && event.description && (
               <p className="text-ink-muted text-sm mt-1 line-clamp-2">{event.description}</p>
             )}
-            {displayMileage && (
-              <p className="flex items-center gap-1 text-xs text-ink/40 mt-1">
-                <Gauge size={11} />
-                {displayMileage}
-              </p>
-            )}
+            <div className="flex items-center gap-3 mt-1">
+              {displayMileage && (
+                <p className="flex items-center gap-1 text-xs text-ink/40">
+                  <Gauge size={11} />
+                  {displayMileage}
+                </p>
+              )}
+              {event.amount != null && (
+                <p className="text-xs text-ink/40">
+                  {amountSymbol}{Math.round(event.amount).toLocaleString("en-US")}
+                </p>
+              )}
+            </div>
           </>
         )}
-      </article>
-    </Link>
+      </Link>
+
+      {/* Owner actions — edit + delete (outside the link) */}
+      {isOwner && (
+        <div className="mt-2">
+          {!confirming ? (
+            <div className="flex gap-3">
+              <Link
+                href={`/car/${carSlug}/events/${event.id}/edit`}
+                className="text-xs text-ink/40 hover:text-ink transition-colors"
+              >
+                Edit
+              </Link>
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="text-xs text-ink/40 hover:text-red-500 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-ink/50">Delete this event?</span>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                disabled={deleting}
+                className="text-xs text-ink/40 hover:text-ink transition-colors disabled:opacity-50"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Yes, delete"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -282,7 +364,7 @@ function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean })
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km", purchaseRecord }: CarTabsProps) {
+export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km", purchaseRecord, carCurrency = "EUR" }: CarTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
 
   const buildEvents = events.filter((e) => e.type === "build");
@@ -343,7 +425,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {events.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} isOwner={isOwner} carCurrency={carCurrency} />
                 ))}
                 {purchaseRecord && (
                   <PurchaseCard record={purchaseRecord} carSlug={carSlug} isOwner={isOwner} viewerUnit={viewerUnit} />
@@ -356,7 +438,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {buildEvents.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} isOwner={isOwner} carCurrency={carCurrency} />
                 ))}
               </div>
         )}
@@ -366,7 +448,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {fixEvents.map((e, i) => (
-                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
+                  <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} isOwner={isOwner} carCurrency={carCurrency} />
                 ))}
               </div>
         )}

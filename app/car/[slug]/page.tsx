@@ -10,6 +10,7 @@ import {
   FUEL_OPTIONS, BODY_TYPE_OPTIONS, DRIVETRAIN_OPTIONS, ACQUISITION_OPTIONS,
 } from "@/lib/car-options";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
+import { UndoSaleButton } from "@/components/UndoSaleButton";
 
 export async function generateMetadata({
   params,
@@ -133,7 +134,7 @@ export default async function CarPage({
 
   const { data: rawEvents } = await supabase
     .from("car_events")
-    .select("id, type, title, description, details, event_date, mileage_value, mileage_unit")
+    .select("id, type, title, description, details, event_date, mileage_value, mileage_unit, amount")
     .eq("car_id", car.id)
     .order("event_date", { ascending: false });
 
@@ -402,6 +403,20 @@ export default async function CarPage({
                 </Link>
               )}
 
+              {isSold && (
+                <Link
+                  href={`/car/${car.slug}/sell/edit`}
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-ink/15 rounded-input text-ink-muted hover:text-ink hover:border-ink/25 transition-colors"
+                >
+                  <Pencil size={13} />
+                  Edit sale
+                </Link>
+              )}
+
+              {isSold && (
+                <UndoSaleButton carId={car.id} carSlug={car.slug} />
+              )}
+
               {/* Primary action — filled ink */}
               <Link
                 href={`/car/${car.slug}/events/new`}
@@ -424,6 +439,7 @@ export default async function CarPage({
           photos={galleryPhotos}
           supabaseUrl={supabaseUrl}
           viewerUnit={viewerUnit}
+          carCurrency={ownership?.currency ?? "EUR"}
           purchaseRecord={ownership ? {
             startDate: ownership.start_date ?? null,
             purchasePrice: ownership.purchase_price ?? null,

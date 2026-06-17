@@ -370,6 +370,113 @@ export async function markAsSold(
   return { slug: car.slug };
 }
 
+export async function undoSale(carId: string): Promise<{ error: string } | { slug: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return { error: "Car not found." };
+
+  const { data: ownership } = await supabase
+    .from("ownerships")
+    .select("id")
+    .eq("car_id", carId)
+    .eq("user_id", user.id)
+    .not("end_date", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!ownership) return { error: "No ended ownership found." };
+
+  const { error } = await supabase
+    .from("ownerships")
+    .update({
+      end_date: null,
+      sale_price: null,
+      sale_price_public: false,
+      sale_mileage_value: null,
+      sale_mileage_unit: null,
+    })
+    .eq("id", ownership.id);
+
+  if (error) return { error: "Failed to undo sale. Please try again." };
+
+  revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/garage");
+  revalidatePath("/profile");
+  return { slug: car.slug };
+}
+
+export async function updateSaleDetails(
+  _prev: CarState,
+  formData: FormData
+): Promise<CarState> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const carId = formData.get("car_id") as string;
+
+  const { data: car } = await supabase
+    .from("cars")
+    .select("slug")
+    .eq("id", carId)
+    .eq("current_owner_id", user.id)
+    .single();
+
+  if (!car) return { error: "Car not found." };
+
+  const { data: ownership } = await supabase
+    .from("ownerships")
+    .select("id")
+    .eq("car_id", carId)
+    .eq("user_id", user.id)
+    .not("end_date", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!ownership) return { error: "No ended ownership found." };
+
+  const saleDate = (formData.get("sale_date") as string)?.trim();
+  if (!saleDate) return { error: "Sale date is required." };
+
+  const salePriceRaw = (formData.get("sale_price") as string)?.trim();
+  const salePrice = salePriceRaw ? parseFloat(salePriceRaw) : null;
+  const salePricePublic = formData.get("sale_price_public") === "true";
+  const currency = (formData.get("currency") as string)?.trim() || "EUR";
+
+  const saleMileageRaw = parseInt(formData.get("sale_mileage_value") as string, 10);
+  const saleMileageValue = isNaN(saleMileageRaw) || saleMileageRaw <= 0 ? null : saleMileageRaw;
+  const saleMileageUnit = (formData.get("sale_mileage_unit") as string)?.trim() || "km";
+
+  const { error } = await supabase
+    .from("ownerships")
+    .update({
+      end_date: saleDate,
+      sale_price: salePrice,
+      sale_price_public: salePricePublic,
+      currency,
+      sale_mileage_value: saleMileageValue,
+      sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
+    })
+    .eq("id", ownership.id);
+
+  if (error) return { error: "Failed to save. Please try again." };
+
+  revalidatePath(`/car/${car.slug}`);
+  revalidatePath("/garage");
+  return { slug: car.slug };
+}
+
 export async function deleteCar(carId: string): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

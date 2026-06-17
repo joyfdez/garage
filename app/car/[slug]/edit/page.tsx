@@ -37,7 +37,8 @@ export default async function EditCarPage({
       .select("id, start_date, purchase_price, purchase_price_public, currency, purchase_mileage_value, purchase_mileage_unit")
       .eq("car_id", car.id)
       .eq("user_id", user.id)
-      .is("end_date", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle(),
     supabase.from("profiles").select("mileage_unit").eq("id", user.id).single(),
   ]);

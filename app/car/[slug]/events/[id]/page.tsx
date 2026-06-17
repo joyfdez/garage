@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Gauge } from "lucide-react";
+import { ArrowLeft, Calendar, Gauge, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
+import { CURRENCIES } from "@/lib/car-options";
 import { ShareButton } from "@/components/ShareButton";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { DeleteEventButton } from "@/components/DeleteEventButton";
 
 export async function generateMetadata({
   params,
@@ -103,19 +105,28 @@ export default async function EventDetailPage({
   const isOwner = user?.id === car.current_owner_id;
   if (car.visibility === "private" && !isOwner) notFound();
 
-  const [eventResult, profileResult] = await Promise.all([
+  const [eventResult, profileResult, ownershipResult] = await Promise.all([
     supabase
       .from("car_events")
-      .select("id, type, title, description, details, event_date, mileage_value, mileage_unit")
+      .select("id, type, title, description, details, event_date, mileage_value, mileage_unit, amount")
       .eq("id", id)
       .eq("car_id", car.id)
       .single(),
     user
       ? supabase.from("profiles").select("mileage_unit").eq("id", user.id).single()
       : Promise.resolve({ data: null }),
+    supabase
+      .from("ownerships")
+      .select("currency")
+      .eq("car_id", car.id)
+      .eq("user_id", car.current_owner_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const { data: event } = eventResult;
   const viewerUnit: MileageUnit = profileResult.data?.mileage_unit === "mi" ? "mi" : "km";
+  const carCurrency = ownershipResult.data?.currency ?? "EUR";
 
   if (!event) notFound();
 
@@ -136,6 +147,8 @@ export default async function EventDetailPage({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
   const isFix = event.type === "fix";
+  const eventAmount = (event as { amount?: number | null }).amount ?? null;
+  const amountCurrencySymbol = CURRENCIES.find((c) => c.value === carCurrency)?.symbol ?? carCurrency;
   const details = event.details as {
     problem?: string;
     diagnosis?: string;
@@ -179,7 +192,7 @@ export default async function EventDetailPage({
           {car.year} {make} {model}
         </Link>
 
-        {/* Type badge + date + mileage */}
+        {/* Type badge + date + mileage + amount */}
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <span
             className={`text-xs font-medium px-2.5 py-1 rounded-full ${
@@ -204,7 +217,26 @@ export default async function EventDetailPage({
               {displayMileage}
             </span>
           )}
+          {eventAmount != null && (
+            <span className="text-xs text-ink/30">
+              {amountCurrencySymbol}{Math.round(eventAmount).toLocaleString("en-US")} spent
+            </span>
+          )}
         </div>
+
+        {/* Owner actions */}
+        {isOwner && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Link
+              href={`/car/${slug}/events/${id}/edit`}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-ink/15 rounded-input text-ink hover:bg-ink/5 transition-colors"
+            >
+              <Pencil size={13} />
+              Edit
+            </Link>
+            <DeleteEventButton eventId={id} carSlug={slug} />
+          </div>
+        )}
 
         {/* Title */}
         <h1 className="font-display font-bold text-2xl leading-tight mb-4">
