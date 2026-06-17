@@ -166,9 +166,11 @@ function CascadePicker({
 export function AddCarForm({
   userId,
   preferredUnit = "km",
+  preferredCurrency = "EUR",
 }: {
   userId: string;
   preferredUnit?: "km" | "mi";
+  preferredCurrency?: string;
 }) {
   const [state, action, pending] = useActionState<CarState, FormData>(createCar, null);
   const router = useRouter();
@@ -203,7 +205,7 @@ export function AddCarForm({
   // Other form state
   const [isPrivate, setIsPrivate] = useState(false);
   const [purchasePricePublic, setPurchasePricePublic] = useState(false);
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState(preferredCurrency);
   const [rawPrice, setRawPrice] = useState("");
   const [rawMileage, setRawMileage] = useState("");
   const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(preferredUnit);

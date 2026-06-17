@@ -11,18 +11,20 @@ export function MarkAsSoldForm({
   carName,
   purchaseCurrency,
   preferredUnit = "km",
+  preferredCurrency = "EUR",
 }: {
   carId: string;
   carName: string;
   purchaseCurrency: string;
   preferredUnit?: "km" | "mi";
+  preferredCurrency?: string;
 }) {
   const [state, action, pending] = useActionState<CarState, FormData>(markAsSold, null);
   const [pricePublic, setPricePublic] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [saleMileageUnit, setSaleMileageUnit] = useState<"km" | "mi">(preferredUnit);
   const router = useRouter();
-  const lockedCurrency = purchaseCurrency || "EUR";
+  const lockedCurrency = purchaseCurrency || preferredCurrency || "EUR";
 
   const today = new Date().toISOString().split("T")[0];
 

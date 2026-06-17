@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, display_name, first_name, last_name, location, country, bio, gender, birthday, avatar_url, cover_photo_path, mileage_unit")
+    .select("username, display_name, first_name, last_name, location, country, bio, gender, birthday, avatar_url, cover_photo_path, mileage_unit, preferred_currency")
     .eq("id", user.id)
     .single();
 
@@ -41,7 +41,8 @@ export default async function SettingsPage() {
           birthday:          profile.birthday    ?? null,
           avatar_url:        profile.avatar_url  ?? null,
           cover_photo_path:  profile.cover_photo_path ?? null,
-          mileage_unit:      (profile.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi",
+          mileage_unit:       (profile.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi",
+          preferred_currency: profile.preferred_currency ?? "EUR",
         }}
         userId={user.id}
         supabaseUrl={supabaseUrl}

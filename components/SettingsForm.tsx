@@ -12,6 +12,7 @@ import { Camera, LogOut, Eye, EyeOff, Lock, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CropModal } from "@/components/CropModal";
 import { CountrySelect } from "@/components/CountrySelect";
+import { CURRENCIES } from "@/lib/car-options";
 import { toast } from "sonner";
 
 export interface ProfileForSettings {
@@ -27,6 +28,7 @@ export interface ProfileForSettings {
   avatar_url: string | null;
   cover_photo_path: string | null;
   mileage_unit: "km" | "mi";
+  preferred_currency: string;
 }
 
 const GENDERS = ["", "Male", "Female", "Non-binary", "Other", "Prefer not to say"];
@@ -379,6 +381,22 @@ export function SettingsForm({
                       className="sr-only peer" />
                     <span className="px-4 py-2 rounded-xl text-sm font-medium border border-card bg-card text-ink/50 peer-checked:bg-ink peer-checked:text-paper peer-checked:border-ink transition-colors">
                       {u === "km" ? "km — kilometres" : "mi — miles"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-2 block">Default currency</label>
+              <div className="flex flex-wrap gap-2">
+                {CURRENCIES.map((c) => (
+                  <label key={c.value} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="preferred_currency" value={c.value}
+                      defaultChecked={profile.preferred_currency === c.value}
+                      className="sr-only peer" />
+                    <span className="px-3 py-2 rounded-xl text-sm font-medium border border-card bg-card text-ink/50 peer-checked:bg-ink peer-checked:text-paper peer-checked:border-ink transition-colors">
+                      {c.symbol} {c.label}
                     </span>
                   </label>
                 ))}

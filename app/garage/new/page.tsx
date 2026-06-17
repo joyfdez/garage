@@ -11,16 +11,17 @@ export default async function AddCarPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("mileage_unit")
+    .select("mileage_unit, preferred_currency")
     .eq("id", user.id)
     .single();
 
-  const preferredUnit = profile?.mileage_unit === "mi" ? "mi" : "km";
+  const preferredUnit = (profile?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
+  const preferredCurrency = profile?.preferred_currency ?? "EUR";
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <h1 className="font-display text-2xl font-bold mb-6">Add a car</h1>
-      <AddCarForm userId={user.id} preferredUnit={preferredUnit as "km" | "mi"} />
+      <AddCarForm userId={user.id} preferredUnit={preferredUnit} preferredCurrency={preferredCurrency} />
     </div>
   );
 }
