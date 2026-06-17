@@ -166,7 +166,10 @@ export default async function EventDetailPage({
         />
       )}
 
-      <div className="px-4 py-4">
+      <div
+          className="px-4 pb-4"
+          style={{ paddingTop: coverPhoto ? "1rem" : "calc(1rem + env(safe-area-inset-top, 0px))" }}
+        >
         {/* Back nav */}
         <Link
           href={`/car/${slug}`}

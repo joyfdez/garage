@@ -30,11 +30,21 @@ export default async function EditCarPage({
   if (!car) notFound();
   if (car.current_owner_id !== user.id) notFound();
 
-  const { data: rawPhotos } = await supabase
-    .from("photos")
-    .select("id, storage_path")
-    .eq("car_id", car.id)
-    .order("position");
+  const [photosResult, ownershipResult, profileResult] = await Promise.all([
+    supabase.from("photos").select("id, storage_path").eq("car_id", car.id).order("position"),
+    supabase
+      .from("ownerships")
+      .select("id, start_date, purchase_price, purchase_price_public, currency, purchase_mileage_value, purchase_mileage_unit")
+      .eq("car_id", car.id)
+      .eq("user_id", user.id)
+      .is("end_date", null)
+      .maybeSingle(),
+    supabase.from("profiles").select("mileage_unit").eq("id", user.id).single(),
+  ]);
+
+  const { data: rawPhotos } = photosResult;
+  const activeOwnership = ownershipResult.data;
+  const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
 
   type ModelRow = { make: string; model: string; generation: string; engines: string[] };
   const rawModel = car.model as unknown;
@@ -65,6 +75,14 @@ export default async function EditCarPage({
     drivetrain: (car as { drivetrain?: string | null }).drivetrain ?? null,
     horsepower: (car as { horsepower?: number | null }).horsepower ?? null,
     body_type: (car as { body_type?: string | null }).body_type ?? null,
+    ownershipId: activeOwnership?.id ?? null,
+    purchaseDate: activeOwnership?.start_date ?? null,
+    purchasePrice: (activeOwnership as { purchase_price?: number | null } | null)?.purchase_price ?? null,
+    purchasePricePublic: (activeOwnership as { purchase_price_public?: boolean | null } | null)?.purchase_price_public ?? false,
+    purchaseCurrency: activeOwnership?.currency ?? "EUR",
+    purchaseMileageValue: (activeOwnership as { purchase_mileage_value?: number | null } | null)?.purchase_mileage_value ?? null,
+    purchaseMileageUnit: (activeOwnership as { purchase_mileage_unit?: string | null } | null)?.purchase_mileage_unit ?? null,
+    preferredUnit,
   };
 
   const photos: PhotoItem[] = (rawPhotos ?? []).map((p) => ({
@@ -75,7 +93,7 @@ export default async function EditCarPage({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
   return (
-    <div className="px-4 py-6 max-w-lg">
+    <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <div className="flex items-center gap-3 mb-6">
         <Link
           href={`/car/${slug}`}

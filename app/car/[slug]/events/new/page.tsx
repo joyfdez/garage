@@ -43,7 +43,7 @@ export default async function AddEventPage({
   const model = m?.model ?? car.custom_model ?? "";
 
   return (
-    <div className="px-4 py-6 max-w-lg">
+    <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <div className="flex items-center gap-3 mb-6">
         <Link
           href={`/car/${slug}`}

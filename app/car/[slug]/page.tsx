@@ -93,7 +93,7 @@ export default async function CarPage({
 
   const { data: ownershipRaw } = await supabase
     .from("v_ownerships")
-    .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, sale_mileage_value, sale_mileage_unit")
+    .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, purchase_mileage_value, purchase_mileage_unit, sale_mileage_value, sale_mileage_unit")
     .eq("car_id", car.id)
     .eq("user_id", car.current_owner_id)
     .order("created_at", { ascending: false })
@@ -432,6 +432,14 @@ export default async function CarPage({
           photos={galleryPhotos}
           supabaseUrl={supabaseUrl}
           viewerUnit={viewerUnit}
+          purchaseRecord={ownership ? {
+            startDate: ownership.start_date ?? null,
+            purchasePrice: ownership.purchase_price ?? null,
+            currency: ownership.currency ?? null,
+            acquisitionConditionLabel: optLabel(ACQUISITION_OPTIONS, (ownership as { acquisition_condition?: string | null }).acquisition_condition ?? null),
+            purchaseMileageValue: (ownership as { purchase_mileage_value?: number | null }).purchase_mileage_value ?? null,
+            purchaseMileageUnit: (ownership as { purchase_mileage_unit?: string | null }).purchase_mileage_unit ?? null,
+          } : undefined}
         />
       </div>
     </div>

@@ -41,6 +41,15 @@ export interface CarForEdit {
   drivetrain: string | null;
   horsepower: number | null;
   body_type: string | null;
+  // Ownership / purchase fields
+  ownershipId?: string | null;
+  purchaseDate?: string | null;
+  purchasePrice?: number | null;
+  purchasePricePublic?: boolean;
+  purchaseCurrency?: string;
+  purchaseMileageValue?: number | null;
+  purchaseMileageUnit?: string | null;
+  preferredUnit?: "km" | "mi";
 }
 
 export interface PhotoItem {
@@ -67,6 +76,10 @@ export function EditCarForm({
   const [state, action, pending] = useActionState<CarState, FormData>(updateCar, null);
   const [navigating, setNavigating] = useState(false);
   const [isPrivate, setIsPrivate] = useState(car.visibility === "private");
+  const [purchasePricePublic, setPurchasePricePublic] = useState(car.purchasePricePublic ?? false);
+  const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(
+    (car.purchaseMileageUnit as "km" | "mi") ?? car.preferredUnit ?? "km"
+  );
 
   useEffect(() => {
     if (state && "slug" in state) {
@@ -375,6 +388,95 @@ export function EditCarForm({
             <input type="hidden" name="visibility" value={isPrivate ? "private" : "public"} />
           </div>
         </section>
+
+        {/* ── Purchase details ── */}
+        {car.ownershipId && (
+          <section className="space-y-4 pt-2 border-t border-card">
+            <h2 className="font-display font-bold text-lg">Purchase details</h2>
+            <input type="hidden" name="ownership_id" value={car.ownershipId} />
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
+              <input
+                name="purchase_date"
+                type="date"
+                defaultValue={car.purchaseDate ?? ""}
+                className="input-field w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">
+                Purchase price{car.purchaseCurrency ? ` (${car.purchaseCurrency})` : ""}
+              </label>
+              <input
+                name="purchase_price"
+                type="number"
+                min={0}
+                step={100}
+                defaultValue={car.purchasePrice ?? ""}
+                placeholder="15000"
+                className="input-field w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-2 block">Price visibility</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPurchasePricePublic(true)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    purchasePricePublic ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                  }`}
+                >
+                  <Globe size={13} />Public
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPurchasePricePublic(false)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    !purchasePricePublic ? "bg-ink text-background border-ink" : "bg-card text-ink/50 border-card"
+                  }`}
+                >
+                  <Lock size={13} />Private
+                </button>
+              </div>
+              <input type="hidden" name="purchase_price_public" value={purchasePricePublic ? "true" : "false"} />
+            </div>
+
+            <div>
+              <label className="text-xs text-ink/50 mb-1 block">Odometer at purchase</label>
+              <div className="flex gap-2">
+                <input
+                  name="purchase_mileage_value"
+                  type="number"
+                  min={1}
+                  defaultValue={car.purchaseMileageValue ?? ""}
+                  placeholder="84000"
+                  className="input-field flex-1 min-w-0"
+                />
+                <div className="flex rounded-xl border border-ink/10 overflow-hidden text-sm font-medium">
+                  {(["km", "mi"] as const).map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => setPurchaseMileageUnit(u)}
+                      className={`px-3 py-2 transition-colors ${
+                        purchaseMileageUnit === u
+                          ? "bg-ink text-paper"
+                          : "bg-card text-ink/50 hover:text-ink"
+                      }`}
+                    >
+                      {u}
+                    </button>
+                  ))}
+                </div>
+                <input type="hidden" name="purchase_mileage_unit" value={purchaseMileageUnit} />
+              </div>
+            </div>
+          </section>
+        )}
 
         {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
 

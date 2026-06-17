@@ -55,7 +55,7 @@ export default async function SellCarPage({
   const carName = `${car.year} ${make} ${model}${generation ? ` ${generation}` : ""}`;
 
   return (
-    <div className="px-4 py-6 max-w-lg">
+    <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <div className="flex items-center gap-3 mb-2">
         <Link href={`/car/${slug}`} className="text-ink/40 hover:text-ink transition-colors">
           <ArrowLeft size={20} />

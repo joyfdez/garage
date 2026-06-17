@@ -33,7 +33,7 @@ export default async function ExplorePage() {
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       {/* ── Header ── */}
-      <div className="px-5 pt-8 pb-6">
+      <div className="px-5 pb-6 pt-safe-page-8">
         <h1 className="font-display font-extrabold text-[2rem] leading-tight text-ink tracking-tight">
           Explore
         </h1>

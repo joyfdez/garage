@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
   return (
-    <div className="px-4 py-6 max-w-lg">
+    <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <div className="flex items-center gap-3 mb-6">
         <Link href={`/u/${profile.username}`} className="text-ink/40 hover:text-ink transition-colors">
           <ArrowLeft size={20} />

@@ -34,6 +34,14 @@
     padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Sub-page headers: base padding + iOS status-bar clearance (PWA standalone) */
+  .pt-safe-page {
+    padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+  }
+  .pt-safe-page-8 {
+    padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+  }
+
   /* ── Animations ─────────────────────────────────────────────────────────── */
 
   /* Page-level fade-in on mount (250ms) */

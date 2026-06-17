@@ -10,7 +10,7 @@ export default async function AddCarPage() {
   if (!user) redirect("/auth/login");
 
   return (
-    <div className="px-4 py-6 max-w-lg">
+    <div className="px-4 pb-6 pt-safe-page max-w-lg">
       <h1 className="font-display text-2xl font-bold mb-6">Add a car</h1>
       <AddCarForm userId={user.id} />
     </div>

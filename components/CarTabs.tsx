@@ -26,6 +26,15 @@ interface Photo {
   event_id: string | null;
 }
 
+interface PurchaseRecord {
+  startDate: string | null;
+  purchasePrice: number | null;
+  currency: string | null;
+  acquisitionConditionLabel: string | null;
+  purchaseMileageValue: number | null;
+  purchaseMileageUnit: string | null;
+}
+
 interface CarTabsProps {
   carSlug: string;
   isOwner: boolean;
@@ -33,6 +42,7 @@ interface CarTabsProps {
   photos: Photo[];
   supabaseUrl: string;
   viewerUnit?: MileageUnit;
+  purchaseRecord?: PurchaseRecord;
 }
 
 type Tab = "timeline" | "mods" | "fixes" | "gallery";
@@ -166,6 +176,85 @@ function EventCard({
   );
 }
 
+// ── Purchase origin card ─────────────────────────────────────────────────────
+
+function PurchaseCard({
+  record,
+  carSlug,
+  isOwner,
+  viewerUnit = "km",
+}: {
+  record: PurchaseRecord;
+  carSlug: string;
+  isOwner: boolean;
+  viewerUnit?: MileageUnit;
+}) {
+  if (!record.startDate) return null;
+
+  const dateStr = new Date(record.startDate)
+    .toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    .toUpperCase();
+
+  const mileageStr = record.purchaseMileageValue
+    ? formatMileage(
+        convertMileage(
+          record.purchaseMileageValue,
+          (record.purchaseMileageUnit ?? "km") as MileageUnit,
+          viewerUnit
+        ),
+        viewerUnit
+      )
+    : null;
+
+  const priceStr =
+    record.purchasePrice != null
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: record.currency ?? "EUR",
+          maximumFractionDigits: 0,
+        }).format(record.purchasePrice)
+      : null;
+
+  const content = (
+    <div className="rounded-card border border-dashed border-ink/12 bg-card p-4">
+      <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
+        <span className="text-ink/35">ORIGIN</span>
+        <span className="text-hint mx-1.5">·</span>
+        {dateStr}
+      </p>
+      <h3 className="font-display font-bold text-lg text-ink">Purchased</h3>
+      {(priceStr || mileageStr || record.acquisitionConditionLabel) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink/50">
+          {priceStr && <span>{priceStr}</span>}
+          {mileageStr && (
+            <span className="flex items-center gap-1">
+              <Gauge size={11} />
+              {mileageStr}
+            </span>
+          )}
+          {record.acquisitionConditionLabel && (
+            <span>{record.acquisitionConditionLabel}</span>
+          )}
+        </div>
+      )}
+      {isOwner && (
+        <p className="text-[0.6rem] text-ink/25 mt-2.5 uppercase tracking-[0.1em]">
+          Edit via car settings
+        </p>
+      )}
+    </div>
+  );
+
+  if (isOwner) {
+    return (
+      <Link href={`/car/${carSlug}/edit`} className="block">
+        {content}
+      </Link>
+    );
+  }
+  return content;
+}
+
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean }) {
@@ -193,7 +282,7 @@ function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean })
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km" }: CarTabsProps) {
+export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km", purchaseRecord }: CarTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
 
   const buildEvents = events.filter((e) => e.type === "build");
@@ -250,12 +339,15 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
       {/* ── Tab content ── */}
       <div className="px-4 py-5">
         {activeTab === "timeline" && (
-          events.length === 0
+          events.length === 0 && !purchaseRecord?.startDate
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
                 {events.map((e, i) => (
                   <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} />
                 ))}
+                {purchaseRecord && (
+                  <PurchaseCard record={purchaseRecord} carSlug={carSlug} isOwner={isOwner} viewerUnit={viewerUnit} />
+                )}
               </div>
         )}
 

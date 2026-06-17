@@ -195,6 +195,30 @@ export async function updateCar(
   const { error } = await supabase.from("cars").update(updates).eq("id", carId);
   if (error) return { error: "Failed to save changes. Please try again." };
 
+  // Also update ownership purchase fields if an ownership_id was submitted
+  const ownershipId = (formData.get("ownership_id") as string)?.trim() || null;
+  if (ownershipId) {
+    const purchaseDate = (formData.get("purchase_date") as string)?.trim() || null;
+    const purchasePriceRaw = (formData.get("purchase_price") as string)?.trim();
+    const purchasePrice = purchasePriceRaw ? parseFloat(purchasePriceRaw) : null;
+    const purchasePricePublic = formData.get("purchase_price_public") === "true";
+    const purchaseMileageRaw = parseInt(formData.get("purchase_mileage_value") as string, 10);
+    const purchaseMileageValue = isNaN(purchaseMileageRaw) || purchaseMileageRaw <= 0 ? null : purchaseMileageRaw;
+    const purchaseMileageUnit = (formData.get("purchase_mileage_unit") as string)?.trim() || "km";
+
+    await supabase
+      .from("ownerships")
+      .update({
+        start_date: purchaseDate,
+        purchase_price: purchasePrice,
+        purchase_price_public: purchasePricePublic,
+        purchase_mileage_value: purchaseMileageValue,
+        purchase_mileage_unit: purchaseMileageValue ? purchaseMileageUnit : null,
+      })
+      .eq("id", ownershipId)
+      .eq("user_id", user.id);
+  }
+
   revalidatePath(`/car/${existing.slug}`);
   revalidatePath("/garage");
   return { slug: existing.slug };
