@@ -30,7 +30,7 @@ export default async function EditSalePage({
   const [ownershipResult, profileResult] = await Promise.all([
     supabase
       .from("ownerships")
-      .select("id, end_date, sale_price, sale_price_public, currency, sale_mileage_value, sale_mileage_unit")
+      .select("id, end_date, sale_price, sale_price_public, currency, sale_mileage_value, sale_mileage_unit, sale_description, sale_photo_path")
       .eq("car_id", car.id)
       .eq("user_id", user.id)
       .not("end_date", "is", null)
@@ -44,6 +44,7 @@ export default async function EditSalePage({
   if (!ownership) redirect(`/car/${slug}`);
 
   const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
   type ModelRow = { make: string; model: string; generation: string };
   const rawModel = car.model as unknown;
@@ -68,12 +69,16 @@ export default async function EditSalePage({
       <EditSaleForm
         carId={car.id}
         carName={carName}
+        userId={user.id}
         saleDate={ownership.end_date}
         salePrice={(ownership as { sale_price?: number | null }).sale_price ?? null}
         salePricePublic={(ownership as { sale_price_public?: boolean | null }).sale_price_public ?? false}
         currency={ownership.currency ?? "EUR"}
         saleMileageValue={(ownership as { sale_mileage_value?: number | null }).sale_mileage_value ?? null}
         saleMileageUnit={(ownership as { sale_mileage_unit?: string | null }).sale_mileage_unit ?? null}
+        saleDescription={(ownership as { sale_description?: string | null }).sale_description ?? null}
+        salePhotoPath={(ownership as { sale_photo_path?: string | null }).sale_photo_path ?? null}
+        supabaseUrl={supabaseUrl}
         preferredUnit={preferredUnit}
       />
     </div>

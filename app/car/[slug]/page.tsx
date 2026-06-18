@@ -94,7 +94,7 @@ export default async function CarPage({
 
   const { data: ownershipRaw } = await supabase
     .from("v_ownerships")
-    .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, purchase_mileage_value, purchase_mileage_unit, sale_mileage_value, sale_mileage_unit")
+    .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, purchase_mileage_value, purchase_mileage_unit, sale_mileage_value, sale_mileage_unit, sale_photo_path, sale_description")
     .eq("car_id", car.id)
     .eq("user_id", car.current_owner_id)
     .order("created_at", { ascending: false })
@@ -395,7 +395,7 @@ export default async function CarPage({
 
               {!isSold && (
                 <Link
-                  href={`/car/${car.slug}/sell`}
+                  href={`/car/${car.slug}/events/new?type=sold`}
                   className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-ink/15 rounded-input text-ink-muted hover:text-ink hover:border-ink/25 transition-colors"
                 >
                   <Tag size={13} />
@@ -447,6 +447,15 @@ export default async function CarPage({
             acquisitionConditionLabel: optLabel(ACQUISITION_OPTIONS, (ownership as { acquisition_condition?: string | null }).acquisition_condition ?? null),
             purchaseMileageValue: (ownership as { purchase_mileage_value?: number | null }).purchase_mileage_value ?? null,
             purchaseMileageUnit: (ownership as { purchase_mileage_unit?: string | null }).purchase_mileage_unit ?? null,
+          } : undefined}
+          saleRecord={isSold && ownership?.end_date ? {
+            endDate: ownership.end_date,
+            salePrice: ownership.sale_price ?? null,
+            currency: ownership.currency ?? null,
+            saleMileageValue: (ownership as { sale_mileage_value?: number | null }).sale_mileage_value ?? null,
+            saleMileageUnit: (ownership as { sale_mileage_unit?: string | null }).sale_mileage_unit ?? null,
+            saleDescription: (ownership as { sale_description?: string | null }).sale_description ?? null,
+            salePhotoPath: (ownership as { sale_photo_path?: string | null }).sale_photo_path ?? null,
           } : undefined}
         />
       </div>

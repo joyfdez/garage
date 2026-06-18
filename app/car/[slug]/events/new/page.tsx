@@ -6,22 +6,29 @@ import { AddEventForm } from "@/components/AddEventForm";
 
 export default async function AddEventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ type?: string }>;
 }) {
   const { slug } = await params;
+  const { type: typeParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const [carResult, profileResult, ownershipResult] = await Promise.all([
-    supabase
-      .from("cars")
-      .select("id, slug, year, current_owner_id, model:car_models(make, model, generation), custom_make, custom_model")
-      .eq("slug", slug)
-      .single(),
+  const { data: car } = await supabase
+    .from("cars")
+    .select("id, slug, year, current_owner_id, model:car_models(make, model, generation), custom_make, custom_model")
+    .eq("slug", slug)
+    .single();
+
+  if (!car) notFound();
+  if (car.current_owner_id !== user.id) notFound();
+
+  const [profileResult, ownershipResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("mileage_unit")
@@ -29,18 +36,20 @@ export default async function AddEventPage({
       .single(),
     supabase
       .from("ownerships")
-      .select("currency")
+      .select("currency, end_date")
       .eq("user_id", user.id)
+      .eq("car_id", car.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
-  const { data: car } = carResult;
-  const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
-  const carCurrency = ownershipResult.data?.currency ?? "EUR";
 
-  if (!car) notFound();
-  if (car.current_owner_id !== user.id) notFound();
+  const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
+  const purchaseCurrency = ownershipResult.data?.currency ?? "EUR";
+  const isSold = !!(ownershipResult.data?.end_date);
+
+  // Don't let someone re-sell an already-sold car via this route
+  if (typeParam === "sold" && isSold) redirect(`/car/${slug}`);
 
   type ModelRow = { make: string; model: string; generation: string };
   const rawModel = car.model as unknown;
@@ -49,6 +58,9 @@ export default async function AddEventPage({
     : (rawModel as ModelRow | null);
   const make = m?.make ?? car.custom_make ?? "";
   const model = m?.model ?? car.custom_model ?? "";
+
+  const initialType = typeParam === "sold" ? ("sold" as const) : undefined;
+  const pageTitle = typeParam === "sold" ? "Mark as sold" : "Add update";
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
@@ -60,14 +72,23 @@ export default async function AddEventPage({
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="font-display font-bold text-xl">Add update</h1>
+          <h1 className="font-display font-bold text-xl">{pageTitle}</h1>
           <p className="text-ink/40 text-xs">
             {car.year} {make} {model}
           </p>
         </div>
       </div>
 
-      <AddEventForm carSlug={slug} userId={user.id} preferredUnit={preferredUnit} carCurrency={carCurrency} />
+      <AddEventForm
+        carSlug={slug}
+        carId={car.id}
+        userId={user.id}
+        preferredUnit={preferredUnit}
+        carCurrency={purchaseCurrency}
+        purchaseCurrency={purchaseCurrency}
+        initialType={initialType}
+        isSold={isSold}
+      />
     </div>
   );
 }

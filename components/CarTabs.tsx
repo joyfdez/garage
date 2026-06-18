@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, Plus, Gauge } from "lucide-react";
+import { Clock, Plus, Gauge, Tag } from "lucide-react";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 import { CURRENCIES } from "@/lib/car-options";
@@ -40,6 +40,16 @@ interface PurchaseRecord {
   purchaseMileageUnit: string | null;
 }
 
+interface SoldRecord {
+  endDate: string;
+  salePrice: number | null;
+  currency: string | null;
+  saleMileageValue: number | null;
+  saleMileageUnit: string | null;
+  saleDescription: string | null;
+  salePhotoPath: string | null;
+}
+
 interface CarTabsProps {
   carSlug: string;
   isOwner: boolean;
@@ -48,6 +58,7 @@ interface CarTabsProps {
   supabaseUrl: string;
   viewerUnit?: MileageUnit;
   purchaseRecord?: PurchaseRecord;
+  saleRecord?: SoldRecord;
   carCurrency?: string;
 }
 
@@ -337,6 +348,99 @@ function PurchaseCard({
   return content;
 }
 
+// ── Sold card ────────────────────────────────────────────────────────────────
+
+function SoldCard({
+  record,
+  carSlug,
+  isOwner,
+  supabaseUrl,
+  viewerUnit = "km",
+}: {
+  record: SoldRecord;
+  carSlug: string;
+  isOwner: boolean;
+  supabaseUrl: string;
+  viewerUnit?: MileageUnit;
+}) {
+  const dateStr = new Date(record.endDate)
+    .toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    .toUpperCase();
+
+  const mileageStr = record.saleMileageValue
+    ? formatMileage(
+        convertMileage(
+          record.saleMileageValue,
+          (record.saleMileageUnit ?? "km") as MileageUnit,
+          viewerUnit
+        ),
+        viewerUnit
+      )
+    : null;
+
+  const priceStr =
+    record.salePrice != null
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: record.currency ?? "EUR",
+          maximumFractionDigits: 0,
+        }).format(record.salePrice)
+      : null;
+
+  const photoUrl = record.salePhotoPath
+    ? `${supabaseUrl}/storage/v1/object/public/car-photos/${record.salePhotoPath}`
+    : null;
+
+  const content = (
+    <article>
+      {photoUrl && (
+        <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photoUrl} alt="Sold" className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      <div className={photoUrl ? "" : "rounded-card border border-dashed border-ink/12 bg-card p-4"}>
+        <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-1.5">
+          <Tag size={9} className="text-[#FF5A1F]" />
+          <span className="text-[#FF5A1F]">SOLD</span>
+          <span className="text-hint mx-0.5">·</span>
+          {dateStr}
+        </p>
+        <h3 className="font-display font-bold text-xl leading-tight text-ink">Sold</h3>
+        {record.saleDescription && (
+          <p className="text-ink-muted text-sm mt-1 line-clamp-3">{record.saleDescription}</p>
+        )}
+        {(priceStr || mileageStr) && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink/50">
+            {priceStr && <span>{priceStr}</span>}
+            {mileageStr && (
+              <span className="flex items-center gap-1">
+                <Gauge size={11} />
+                {mileageStr}
+              </span>
+            )}
+          </div>
+        )}
+        {isOwner && (
+          <p className="text-[0.6rem] text-ink/25 mt-2.5 uppercase tracking-[0.1em]">
+            Edit via car settings
+          </p>
+        )}
+      </div>
+    </article>
+  );
+
+  if (isOwner) {
+    return (
+      <Link href={`/car/${carSlug}/sell/edit`} className="block">
+        {content}
+      </Link>
+    );
+  }
+  return content;
+}
+
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean }) {
@@ -364,7 +468,7 @@ function EmptyState({ carSlug, isOwner }: { carSlug: string; isOwner: boolean })
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km", purchaseRecord, carCurrency = "EUR" }: CarTabsProps) {
+export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerUnit = "km", purchaseRecord, saleRecord, carCurrency = "EUR" }: CarTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
 
   const buildEvents = events.filter((e) => e.type === "build");
@@ -421,9 +525,12 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
       {/* ── Tab content ── */}
       <div className="px-4 py-5">
         {activeTab === "timeline" && (
-          events.length === 0 && !purchaseRecord?.startDate
+          events.length === 0 && !purchaseRecord?.startDate && !saleRecord
             ? <EmptyState carSlug={carSlug} isOwner={isOwner} />
             : <div className="space-y-8">
+                {saleRecord && (
+                  <SoldCard record={saleRecord} carSlug={carSlug} isOwner={isOwner} supabaseUrl={supabaseUrl} viewerUnit={viewerUnit} />
+                )}
                 {events.map((e, i) => (
                   <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} isOwner={isOwner} carCurrency={carCurrency} />
                 ))}

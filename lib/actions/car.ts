@@ -351,6 +351,9 @@ export async function markAsSold(
   const saleMileageValue = isNaN(saleMileageRaw) || saleMileageRaw <= 0 ? null : saleMileageRaw;
   const saleMileageUnit = (formData.get("sale_mileage_unit") as string)?.trim() || "km";
 
+  const salePhotoPath = (formData.get("sale_photo_path") as string)?.trim() || null;
+  const saleDescription = (formData.get("sale_description") as string)?.trim() || null;
+
   const { error } = await supabase
     .from("ownerships")
     .update({
@@ -360,6 +363,8 @@ export async function markAsSold(
       currency,
       sale_mileage_value: saleMileageValue,
       sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
+      sale_photo_path: salePhotoPath,
+      sale_description: saleDescription,
     })
     .eq("id", ownership.id);
 
@@ -404,6 +409,8 @@ export async function undoSale(carId: string): Promise<{ error: string } | { slu
       sale_price_public: false,
       sale_mileage_value: null,
       sale_mileage_unit: null,
+      sale_photo_path: null,
+      sale_description: null,
     })
     .eq("id", ownership.id);
 
@@ -458,6 +465,9 @@ export async function updateSaleDetails(
   const saleMileageValue = isNaN(saleMileageRaw) || saleMileageRaw <= 0 ? null : saleMileageRaw;
   const saleMileageUnit = (formData.get("sale_mileage_unit") as string)?.trim() || "km";
 
+  const salePhotoPath = (formData.get("sale_photo_path") as string)?.trim() || null;
+  const saleDescription = (formData.get("sale_description") as string)?.trim() || null;
+
   const { error } = await supabase
     .from("ownerships")
     .update({
@@ -467,6 +477,8 @@ export async function updateSaleDetails(
       currency,
       sale_mileage_value: saleMileageValue,
       sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
+      sale_photo_path: salePhotoPath,
+      sale_description: saleDescription,
     })
     .eq("id", ownership.id);
 
