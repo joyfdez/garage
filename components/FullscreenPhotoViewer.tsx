@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { X, ExternalLink } from "lucide-react";
 
 export interface ViewerPhoto {
   id: string;
   url: string;
+  /** When set, a breadcrumb link to the event appears in the top bar */
+  eventId?: string;
+  eventTitle?: string;
+  eventType?: string;
+  carSlug?: string;
 }
 
 interface FullscreenPhotoViewerProps {
@@ -56,6 +62,7 @@ function Dots({
  * - Body scroll locked while open
  * - Escape / ArrowLeft / ArrowRight keyboard support
  * - Horizontal swipe to navigate, tap to close
+ * - Optional event breadcrumb link per photo (eventId + carSlug required)
  * - prefers-reduced-motion respected
  */
 export function FullscreenPhotoViewer({
@@ -122,13 +129,13 @@ export function FullscreenPhotoViewer({
     setDragging(false);
 
     if (Math.abs(dx) > SWIPE_THRESHOLD) {
-      // Horizontal swipe — advance or retreat
       setIdx((i) => Math.max(0, Math.min(photos.length - 1, i + (dx < 0 ? 1 : -1))));
     } else if (!wasDragging && Math.abs(dx) < TAP_SLOP && Math.abs(dy) < TAP_SLOP) {
-      // Tap on backdrop (or image) — close
       onClose();
     }
   }
+
+  const current = photos[idx];
 
   return (
     <div
@@ -141,7 +148,7 @@ export function FullscreenPhotoViewer({
       onPointerMove={onMove}
       onPointerUp={onUp}
     >
-      {/* Top bar — photo counter + close button */}
+      {/* Top bar — counter | breadcrumb (centered) | close */}
       <div
         className="relative z-10 flex items-center justify-between px-4 pt-2 pb-3 shrink-0"
         style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top, 0px))" }}
@@ -149,6 +156,23 @@ export function FullscreenPhotoViewer({
         <span className="text-white/50 text-sm tabular-nums font-medium select-none">
           {idx + 1} / {photos.length}
         </span>
+
+        {/* Breadcrumb — only when this photo links to a specific event */}
+        {current?.eventId && current?.carSlug && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top, 0px))", paddingBottom: "0.75rem" }}
+          >
+            <Link
+              href={`/car/${current.carSlug}/events/${current.eventId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto flex items-center gap-1 text-[0.62rem] uppercase tracking-[0.1em] font-semibold text-white/45 hover:text-white/75 transition-colors max-w-[45%]"
+            >
+              <span className="truncate">{current.eventTitle ?? "View update"}</span>
+              <ExternalLink size={8} className="shrink-0" />
+            </Link>
+          </div>
+        )}
+
         <button
           type="button"
           aria-label="Close"

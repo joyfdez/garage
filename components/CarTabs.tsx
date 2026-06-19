@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, Plus, Gauge, Tag } from "lucide-react";
+import { Clock, Plus, Gauge, Tag, Hammer, Wrench, Flag } from "lucide-react";
+import { FullscreenPhotoViewer, type ViewerPhoto } from "@/components/FullscreenPhotoViewer";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 import { CURRENCIES } from "@/lib/car-options";
@@ -29,6 +30,8 @@ interface Photo {
   id: string;
   storage_path: string;
   event_id: string | null;
+  event_type?: string | null;
+  event_title?: string | null;
 }
 
 interface PurchaseRecord {
@@ -38,6 +41,7 @@ interface PurchaseRecord {
   acquisitionConditionLabel: string | null;
   purchaseMileageValue: number | null;
   purchaseMileageUnit: string | null;
+  coverPhotoPath?: string | null;
 }
 
 interface SoldRecord {
@@ -104,7 +108,10 @@ function EventCard({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const coverPhoto = event.photos[0];
+  const hasMultiplePhotos = event.photos.length > 1;
   const isFix = event.type === "fix";
   const amountSymbol = CURRENCIES.find((c) => c.value === carCurrency)?.symbol ?? carCurrency;
 
@@ -114,6 +121,21 @@ function EventCard({
         viewerUnit
       )
     : null;
+
+  // All event photos as viewer-ready objects (with breadcrumb data)
+  const viewerPhotos: ViewerPhoto[] = event.photos.map((p) => ({
+    id: p.id,
+    url: `${supabaseUrl}/storage/v1/object/public/car-photos/${p.storage_path}`,
+    eventId: event.id,
+    eventTitle: event.title,
+    eventType: event.type,
+    carSlug,
+  }));
+
+  // Shared label row for below-photo and no-photo states
+  const TypeIcon = isFix
+    ? <Wrench size={9} className={isFix ? "text-ink-muted" : "text-green-bright"} />
+    : <Hammer size={9} className="text-green-bright" />;
 
   async function handleDelete() {
     setDeleting(true);
@@ -140,26 +162,41 @@ function EventCard({
       style={{ "--rise-delay": `${index * 60}ms` } as React.CSSProperties}
     >
       <Link href={`/car/${carSlug}/events/${event.id}`} className="block group">
-        {/* Photo — 4:3, rounded top, image scales on hover */}
+        {/* Photo — 4:3, rounded top, image scales on hover.
+            When multiple photos: clicking intercepts navigation and opens lightbox instead. */}
         {coverPhoto && (
-          <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
+          <div
+            className="rounded-card overflow-hidden aspect-[4/3] mb-3 relative"
+            onClick={hasMultiplePhotos ? (e) => { e.stopPropagation(); setLightboxOpen(true); } : undefined}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${supabaseUrl}/storage/v1/object/public/car-photos/${coverPhoto.storage_path}`}
               alt={event.title}
               className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
             />
+            {/* +N badge — shows how many additional photos exist */}
+            {hasMultiplePhotos && (
+              <div
+                aria-label={`${event.photos.length} photos`}
+                className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold text-white"
+                style={{ background: "rgba(0,0,0,0.55)" }}
+              >
+                +{event.photos.length - 1}
+              </div>
+            )}
           </div>
         )}
 
         {/* No-photo card — bordered box */}
         {!coverPhoto && (
           <div className="rounded-card border border-ink/8 bg-white mb-3 p-4">
-            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
+            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-1.5">
+              {TypeIcon}
               <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
                 {TYPE_LABELS[event.type]}
               </span>
-              <span className="text-hint mx-1.5">·</span>
+              <span className="text-hint mx-0.5">·</span>
               {formatEventDate(event.event_date)}
             </p>
             <h3 className="font-display font-bold text-xl leading-tight text-ink">
@@ -190,11 +227,12 @@ function EventCard({
         {/* Below-photo text (only when photo exists) */}
         {coverPhoto && (
           <>
-            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-2">
+            <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-1.5">
+              {TypeIcon}
               <span className={isFix ? "text-ink-muted" : "text-green-bright"}>
                 {TYPE_LABELS[event.type]}
               </span>
-              <span className="text-hint/60">·</span>
+              <span className="text-hint/60 mx-0.5">·</span>
               {formatEventDate(event.event_date)}
             </p>
             <h3 className="font-display font-bold text-xl leading-tight text-ink group-hover:text-green-bright transition-colors">
@@ -265,6 +303,16 @@ function EventCard({
           )}
         </div>
       )}
+
+      {/* Multi-photo lightbox */}
+      {lightboxOpen && (
+        <FullscreenPhotoViewer
+          photos={viewerPhotos}
+          initialIndex={0}
+          onClose={() => setLightboxOpen(false)}
+          alt={event.title}
+        />
+      )}
     </article>
   );
 }
@@ -275,11 +323,13 @@ function PurchaseCard({
   record,
   carSlug,
   isOwner,
+  supabaseUrl,
   viewerUnit = "km",
 }: {
   record: PurchaseRecord;
   carSlug: string;
   isOwner: boolean;
+  supabaseUrl: string;
   viewerUnit?: MileageUnit;
 }) {
   if (!record.startDate) return null;
@@ -308,34 +358,48 @@ function PurchaseCard({
         }).format(record.purchasePrice)
       : null;
 
+  const photoUrl = record.coverPhotoPath
+    ? `${supabaseUrl}/storage/v1/object/public/car-photos/${record.coverPhotoPath}`
+    : null;
+
   const content = (
-    <div className="rounded-card border border-ink/8 bg-white mb-3 p-4">
-      <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
-        <span className="text-ink/35">ORIGIN</span>
-        <span className="text-hint mx-1.5">·</span>
-        {dateStr}
-      </p>
-      <h3 className="font-display font-bold text-xl leading-tight text-ink">Purchased</h3>
-      {(priceStr || mileageStr || record.acquisitionConditionLabel) && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink/50">
-          {priceStr && <span>{priceStr}</span>}
-          {mileageStr && (
-            <span className="flex items-center gap-1">
-              <Gauge size={11} />
-              {mileageStr}
-            </span>
-          )}
-          {record.acquisitionConditionLabel && (
-            <span>{record.acquisitionConditionLabel}</span>
-          )}
+    <article>
+      {photoUrl && (
+        <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photoUrl} alt="Purchased" className="w-full h-full object-cover" />
         </div>
       )}
-      {isOwner && (
-        <p className="text-[0.6rem] text-ink/25 mt-2.5 uppercase tracking-[0.1em]">
-          Edit via car settings
+
+      <div className={photoUrl ? "" : "rounded-card border border-ink/8 bg-white mb-3 p-4"}>
+        <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-1.5">
+          <Flag size={9} className="text-ink/35" />
+          <span className="text-ink/35">ORIGIN</span>
+          <span className="text-hint mx-0.5">·</span>
+          {dateStr}
         </p>
-      )}
-    </div>
+        <h3 className="font-display font-bold text-xl leading-tight text-ink">Purchased</h3>
+        {(priceStr || mileageStr || record.acquisitionConditionLabel) && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink/50">
+            {priceStr && <span>{priceStr}</span>}
+            {mileageStr && (
+              <span className="flex items-center gap-1">
+                <Gauge size={11} />
+                {mileageStr}
+              </span>
+            )}
+            {record.acquisitionConditionLabel && (
+              <span>{record.acquisitionConditionLabel}</span>
+            )}
+          </div>
+        )}
+        {isOwner && (
+          <p className="text-[0.6rem] text-ink/25 mt-2.5 uppercase tracking-[0.1em]">
+            Edit via car settings
+          </p>
+        )}
+      </div>
+    </article>
   );
 
   if (isOwner) {
@@ -473,7 +537,6 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
 
   const buildEvents = events.filter((e) => e.type === "build");
   const fixEvents   = events.filter((e) => e.type === "fix");
-  const galleryPics = photos.map((p) => ({ id: p.id, storage_path: p.storage_path }));
 
   const activeIndex = TABS.findIndex((t) => t.id === activeTab);
 
@@ -535,7 +598,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
                   <EventCard key={e.id} event={e} carSlug={carSlug} supabaseUrl={supabaseUrl} index={i} viewerUnit={viewerUnit} isOwner={isOwner} carCurrency={carCurrency} />
                 ))}
                 {purchaseRecord && (
-                  <PurchaseCard record={purchaseRecord} carSlug={carSlug} isOwner={isOwner} viewerUnit={viewerUnit} />
+                  <PurchaseCard record={purchaseRecord} carSlug={carSlug} isOwner={isOwner} supabaseUrl={supabaseUrl} viewerUnit={viewerUnit} />
                 )}
               </div>
         )}
@@ -561,7 +624,7 @@ export function CarTabs({ carSlug, isOwner, events, photos, supabaseUrl, viewerU
         )}
 
         {activeTab === "gallery" && (
-          <PhotoGallery photos={galleryPics} supabaseUrl={supabaseUrl} />
+          <PhotoGallery photos={photos} supabaseUrl={supabaseUrl} carSlug={carSlug} />
         )}
       </div>
     </div>

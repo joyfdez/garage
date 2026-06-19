@@ -296,6 +296,7 @@ export default async function EventDetailPage({
             <PhotoGallery
               photos={photos.slice(1)}
               supabaseUrl={supabaseUrl}
+              carSlug={slug}
             />
           </div>
         )}

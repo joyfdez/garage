@@ -160,11 +160,9 @@ export default async function CarPage({
     .eq("car_id", car.id)
     .order("position");
 
+  // Index photos by event_id first (needed to build eventsWithPhotos)
   const photosByEvent: Record<string, { id: string; storage_path: string }[]> = {};
-  const galleryPhotos: { id: string; storage_path: string; event_id: string | null }[] = [];
-
   for (const p of allPhotos ?? []) {
-    galleryPhotos.push({ id: p.id, storage_path: p.storage_path, event_id: p.event_id });
     if (p.event_id) {
       photosByEvent[p.event_id] = photosByEvent[p.event_id] ?? [];
       photosByEvent[p.event_id].push({ id: p.id, storage_path: p.storage_path });
@@ -175,6 +173,24 @@ export default async function CarPage({
     ...e,
     photos: photosByEvent[e.id] ?? [],
   }));
+
+  // Event metadata lookup for gallery enrichment (no extra DB query)
+  const eventMeta: Record<string, { type: string; title: string }> = {};
+  for (const e of eventsWithPhotos) {
+    eventMeta[e.id] = { type: e.type, title: e.title };
+  }
+
+  // Gallery photos enriched with event type/title (drives overlay icons + lightbox breadcrumb)
+  const galleryPhotos = (allPhotos ?? []).map((p) => ({
+    id: p.id,
+    storage_path: p.storage_path,
+    event_id: p.event_id ?? null,
+    event_type: p.event_id ? (eventMeta[p.event_id]?.type ?? null) : null,
+    event_title: p.event_id ? (eventMeta[p.event_id]?.title ?? null) : null,
+  }));
+
+  // Cover photo path for the Purchased timeline card (first non-event photo)
+  const coverPhotoPath = (allPhotos ?? []).find((p) => !p.event_id)?.storage_path ?? null;
 
   type ModelRow = { make: string; model: string; generation: string; chassis_code?: string };
   type OwnerRow = { username: string; display_name: string | null; avatar_url: string | null };
@@ -478,6 +494,7 @@ export default async function CarPage({
             acquisitionConditionLabel: optLabel(ACQUISITION_OPTIONS, (ownership as { acquisition_condition?: string | null }).acquisition_condition ?? null),
             purchaseMileageValue: (ownership as { purchase_mileage_value?: number | null }).purchase_mileage_value ?? null,
             purchaseMileageUnit: (ownership as { purchase_mileage_unit?: string | null }).purchase_mileage_unit ?? null,
+            coverPhotoPath,
           } : undefined}
           saleRecord={isSold && ownership?.end_date ? {
             endDate: ownership.end_date,
