@@ -363,12 +363,18 @@ export async function markAsSold(
       currency,
       sale_mileage_value: saleMileageValue,
       sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
-      sale_photo_path: salePhotoPath,
-      sale_description: saleDescription,
     })
     .eq("id", ownership.id);
 
   if (error) return { error: "Failed to update. Please try again." };
+
+  // Best-effort: save photo and description only if columns exist (post-migration).
+  if (salePhotoPath !== null || saleDescription !== null) {
+    await supabase
+      .from("ownerships")
+      .update({ sale_photo_path: salePhotoPath, sale_description: saleDescription })
+      .eq("id", ownership.id);
+  }
 
   revalidatePath(`/car/${car.slug}`);
   revalidatePath("/garage");
@@ -477,12 +483,18 @@ export async function updateSaleDetails(
       currency,
       sale_mileage_value: saleMileageValue,
       sale_mileage_unit: saleMileageValue ? saleMileageUnit : null,
-      sale_photo_path: salePhotoPath,
-      sale_description: saleDescription,
     })
     .eq("id", ownership.id);
 
   if (error) return { error: "Failed to save. Please try again." };
+
+  // Best-effort: save photo and description only if columns exist (post-migration).
+  if (salePhotoPath !== null || saleDescription !== null) {
+    await supabase
+      .from("ownerships")
+      .update({ sale_photo_path: salePhotoPath, sale_description: saleDescription })
+      .eq("id", ownership.id);
+  }
 
   revalidatePath(`/car/${car.slug}`);
   revalidatePath("/garage");

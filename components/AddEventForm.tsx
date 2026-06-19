@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Hammer, Wrench, Tag, Eye, EyeOff } from "lucide-react";
+import { X, Hammer, Wrench, Tag, Eye, EyeOff, DollarSign } from "lucide-react";
 import { createEvent, EventState } from "@/lib/actions/event";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { CURRENCIES } from "@/lib/car-options";
@@ -59,7 +59,6 @@ export function AddEventForm({
   const [pricePublic, setPricePublic] = useState(false);
   const currencySymbol = CURRENCIES.find((c) => c.value === carCurrency)?.symbol ?? carCurrency;
   const saleLockedCurrency = purchaseCurrency || "EUR";
-  const saleCurrencySymbol = CURRENCIES.find((c) => c.value === saleLockedCurrency)?.symbol ?? saleLockedCurrency;
 
   useEffect(() => {
     if (eventState && "carSlug" in eventState) {
@@ -466,9 +465,7 @@ export function AddEventForm({
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30 pointer-events-none select-none">
-                  {saleCurrencySymbol}
-                </span>
+                <DollarSign size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
                 <input
                   name="sale_price"
                   type="number"

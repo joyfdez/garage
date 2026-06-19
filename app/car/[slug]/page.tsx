@@ -92,16 +92,30 @@ export default async function CarPage({
   const isOwner = user?.id === car.current_owner_id;
   if (car.visibility === "private" && !isOwner) notFound();
 
-  const { data: ownershipRaw } = await supabase
-    .from("v_ownerships")
-    .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, purchase_mileage_value, purchase_mileage_unit, sale_mileage_value, sale_mileage_unit, sale_photo_path, sale_description")
-    .eq("car_id", car.id)
-    .eq("user_id", car.current_owner_id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [ownershipResult, saleExtrasResult] = await Promise.all([
+    supabase
+      .from("v_ownerships")
+      .select("start_date, end_date, purchase_price, purchase_price_public, sale_price, sale_price_public, currency, acquisition_condition, purchase_mileage_value, purchase_mileage_unit, sale_mileage_value, sale_mileage_unit")
+      .eq("car_id", car.id)
+      .eq("user_id", car.current_owner_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Queried directly (not through view) because these fields are not sensitive.
+    // Returns null gracefully if migration hasn't added the columns yet.
+    supabase
+      .from("ownerships")
+      .select("sale_photo_path, sale_description")
+      .eq("car_id", car.id)
+      .eq("user_id", car.current_owner_id)
+      .not("end_date", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-  const ownership = ownershipRaw;
+  const ownership = ownershipResult.data;
+  const saleExtras = saleExtrasResult.data;
   const isSold = !!(ownership?.end_date);
 
   // Viewer's preferred mileage unit (default km for logged-out viewers)
@@ -454,8 +468,8 @@ export default async function CarPage({
             currency: ownership.currency ?? null,
             saleMileageValue: (ownership as { sale_mileage_value?: number | null }).sale_mileage_value ?? null,
             saleMileageUnit: (ownership as { sale_mileage_unit?: string | null }).sale_mileage_unit ?? null,
-            saleDescription: (ownership as { sale_description?: string | null }).sale_description ?? null,
-            salePhotoPath: (ownership as { sale_photo_path?: string | null }).sale_photo_path ?? null,
+            saleDescription: (saleExtras as { sale_description?: string | null } | null)?.sale_description ?? null,
+            salePhotoPath: (saleExtras as { sale_photo_path?: string | null } | null)?.sale_photo_path ?? null,
           } : undefined}
         />
       </div>
