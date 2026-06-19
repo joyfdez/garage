@@ -309,13 +309,13 @@ function PurchaseCard({
       : null;
 
   const content = (
-    <div className="rounded-card border border-dashed border-ink/12 bg-card p-4">
+    <div className="rounded-card border border-ink/8 bg-white mb-3 p-4">
       <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5">
         <span className="text-ink/35">ORIGIN</span>
         <span className="text-hint mx-1.5">·</span>
         {dateStr}
       </p>
-      <h3 className="font-display font-bold text-lg text-ink">Purchased</h3>
+      <h3 className="font-display font-bold text-xl leading-tight text-ink">Purchased</h3>
       {(priceStr || mileageStr || record.acquisitionConditionLabel) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink/50">
           {priceStr && <span>{priceStr}</span>}
@@ -400,7 +400,7 @@ function SoldCard({
         </div>
       )}
 
-      <div className={photoUrl ? "" : "rounded-card border border-dashed border-ink/12 bg-card p-4"}>
+      <div className={photoUrl ? "" : "rounded-card border border-ink/8 bg-white mb-3 p-4"}>
         <p className="text-[0.58rem] uppercase tracking-[0.18em] font-semibold text-hint mb-1.5 flex items-center gap-1.5">
           <Tag size={9} className="text-[#FF5A1F]" />
           <span className="text-[#FF5A1F]">SOLD</span>

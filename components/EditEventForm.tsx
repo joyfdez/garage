@@ -283,7 +283,7 @@ export function EditEventForm({
             value={formatInt(rawAmount)}
             onChange={(e) => setRawAmount(parseDigits(e.target.value))}
             placeholder="0"
-            className="input-field w-full pl-8"
+            className={`input-field w-full ${currencySymbol.length === 1 ? "pl-8" : "pl-12"}`}
           />
         </div>
         <input type="hidden" name="amount" value={rawAmount} />

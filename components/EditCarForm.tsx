@@ -463,7 +463,7 @@ export function EditCarForm({
                     value={formatInt(rawPrice)}
                     onChange={(e) => setRawPrice(parseDigits(e.target.value))}
                     placeholder="0"
-                    className="input-field w-full pl-9"
+                    className={`input-field w-full ${currencySymbol.length === 1 ? "pl-9" : "pl-12"}`}
                   />
                   <input type="hidden" name="purchase_price" value={rawPrice} />
                 </div>

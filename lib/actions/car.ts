@@ -415,12 +415,16 @@ export async function undoSale(carId: string): Promise<{ error: string } | { slu
       sale_price_public: false,
       sale_mileage_value: null,
       sale_mileage_unit: null,
-      sale_photo_path: null,
-      sale_description: null,
     })
     .eq("id", ownership.id);
 
   if (error) return { error: "Failed to undo sale. Please try again." };
+
+  // Best-effort: clear photo and description (columns added in post-migration).
+  await supabase
+    .from("ownerships")
+    .update({ sale_photo_path: null, sale_description: null })
+    .eq("id", ownership.id);
 
   revalidatePath(`/car/${car.slug}`);
   revalidatePath("/garage");
