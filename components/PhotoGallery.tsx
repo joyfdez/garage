@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { FullscreenPhotoViewer } from "@/components/FullscreenPhotoViewer";
 
 interface Photo {
   id: string;
@@ -26,13 +26,7 @@ export function PhotoGallery({ photos, supabaseUrl }: PhotoGalleryProps) {
     return `${supabaseUrl}/storage/v1/object/public/car-photos/${path}`;
   }
 
-  function prev() {
-    setLightboxIndex((i) => (i !== null ? (i - 1 + photos.length) % photos.length : null));
-  }
-
-  function next() {
-    setLightboxIndex((i) => (i !== null ? (i + 1) % photos.length : null));
-  }
+  const viewerPhotos = photos.map((p) => ({ id: p.id, url: photoUrl(p.storage_path) }));
 
   return (
     <>
@@ -54,45 +48,11 @@ export function PhotoGallery({ photos, supabaseUrl }: PhotoGalleryProps) {
       </div>
 
       {lightboxIndex !== null && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-          onClick={() => setLightboxIndex(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photoUrl(photos[lightboxIndex].storage_path)}
-            alt=""
-            className="max-w-full max-h-full object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-
-          <button
-            onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
-            className="absolute top-4 right-4 text-white/70 hover:text-white"
-          >
-            <X size={24} />
-          </button>
-
-          {photos.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); prev(); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-              >
-                <ChevronLeft size={32} />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); next(); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-              >
-                <ChevronRight size={32} />
-              </button>
-              <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-sm">
-                {lightboxIndex + 1} / {photos.length}
-              </p>
-            </>
-          )}
-        </div>
+        <FullscreenPhotoViewer
+          photos={viewerPhotos}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
     </>
   );

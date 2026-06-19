@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { FullscreenPhotoViewer } from "@/components/FullscreenPhotoViewer";
 
 export interface HeroPhoto {
   id: string;
@@ -33,8 +33,6 @@ export function CarHero({ photos, alt, placeholderYear, children }: CarHeroProps
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lbIdx, setLbIdx] = useState(0);
-  const [lbDrag, setLbDrag] = useState(0);
-  const [lbDragging, setLbDragging] = useState(false);
 
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -45,24 +43,6 @@ export function CarHero({ photos, alt, placeholderYear, children }: CarHeroProps
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
-
-  // Close lightbox on Escape
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setLightboxOpen(false);
-      if (e.key === "ArrowLeft") setLbIdx((i) => Math.max(0, i - 1));
-      if (e.key === "ArrowRight") setLbIdx((i) => Math.min(photos.length - 1, i + 1));
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, photos.length]);
-
-  // Prevent body scroll when lightbox is open
-  useEffect(() => {
-    document.body.style.overflow = lightboxOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [lightboxOpen]);
 
   const EASE = "cubic-bezier(0.25, 0.46, 0.45, 0.94)";
   const DURATION = "0.32s";
@@ -115,35 +95,6 @@ export function CarHero({ photos, alt, placeholderYear, children }: CarHeroProps
     } else if (isTap) {
       setLbIdx(idx);
       setLightboxOpen(true);
-    }
-  }
-
-  // ── Lightbox swipe state ──────────────────────────────────────────────────
-
-  const lbAnchor = useRef<{ x: number } | null>(null);
-
-  function lbDown(e: React.PointerEvent) {
-    lbAnchor.current = { x: e.clientX };
-    setLbDrag(0);
-    setLbDragging(false);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
-  function lbMove(e: React.PointerEvent) {
-    if (!lbAnchor.current) return;
-    const dx = e.clientX - lbAnchor.current.x;
-    setLbDrag(dx);
-    if (Math.abs(dx) > 4) setLbDragging(true);
-  }
-
-  function lbUp(e: React.PointerEvent) {
-    if (!lbAnchor.current) return;
-    const dx = e.clientX - lbAnchor.current.x;
-    lbAnchor.current = null;
-    setLbDrag(0);
-    setLbDragging(false);
-    if (Math.abs(dx) > SWIPE_THRESHOLD) {
-      setLbIdx((i) => Math.max(0, Math.min(photos.length - 1, i + (dx < 0 ? 1 : -1))));
     }
   }
 
@@ -225,64 +176,14 @@ export function CarHero({ photos, alt, placeholderYear, children }: CarHeroProps
         {children}
       </div>
 
-      {/* ── Fullscreen lightbox ────────────────────────────────────────────── */}
+      {/* ── Fullscreen lightbox (shared viewer) ───────────────────────────── */}
       {lightboxOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Photo viewer"
-          className="fixed inset-0 z-[90] bg-black flex flex-col"
-          style={{ touchAction: "none" }}
-          onPointerDown={lbDown}
-          onPointerMove={lbMove}
-          onPointerUp={lbUp}
-        >
-          {/* Top bar */}
-          <div
-            className="relative z-10 flex items-center justify-between px-4 pt-2 pb-3 shrink-0"
-            style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top, 0px))" }}
-          >
-            <span className="text-white/50 text-sm tabular-nums font-medium select-none">
-              {lbIdx + 1} / {photos.length}
-            </span>
-            <button
-              type="button"
-              aria-label="Close"
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition-colors"
-              onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Photo strip */}
-          <div className="relative flex-1 overflow-hidden select-none">
-            {photos.map((photo, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={photo.id}
-                src={photo.url}
-                alt={alt}
-                draggable={false}
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{
-                  transform: `translateX(calc(${(i - lbIdx) * 100}% + ${lbDrag}px))`,
-                  transition: lbDragging ? "none" : transition,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Bottom dots */}
-          {photos.length > 1 && (
-            <div
-              className="shrink-0 pt-3"
-              style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))" }}
-            >
-              <Dots current={lbIdx} count={photos.length} />
-            </div>
-          )}
-        </div>
+        <FullscreenPhotoViewer
+          photos={photos}
+          initialIndex={lbIdx}
+          onClose={() => setLightboxOpen(false)}
+          alt={alt}
+        />
       )}
     </>
   );

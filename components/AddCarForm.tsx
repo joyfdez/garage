@@ -686,7 +686,7 @@ export function AddCarForm({
 
       {/* ── Section 4: Purchase details ── */}
       <section>
-        <details className="group">
+        <details className="group min-w-0 overflow-hidden">
           <summary className="cursor-pointer flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink/70 list-none">
             <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
             Purchase details
@@ -707,7 +707,7 @@ export function AddCarForm({
               <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
               <div className="relative">
                 <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
-                <input name="purchase_date" type="date" className="input-field w-full pl-9" />
+                <input name="purchase_date" type="date" className="input-field w-full max-w-full pl-9" />
               </div>
             </div>
 

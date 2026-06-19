@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Lock, Plus, Pencil, Tag, Gauge } from "lucide-react";
+import { MapPin, Lock, Plus, Pencil, Tag, Gauge, ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/ShareButton";
@@ -236,6 +236,31 @@ export default async function CarPage({
         alt={`${car.year} ${make} ${model}`}
         placeholderYear={car.year}
       >
+        {/* Back arrow + circular edit icon — top-left / top-right of hero */}
+        {isOwner && (
+          <div
+            className="absolute inset-x-0 top-0 z-10 flex items-start justify-between px-4 pointer-events-none"
+            style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
+          >
+            <Link
+              href="/profile"
+              className="pointer-events-auto w-10 h-10 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/45 active:bg-black/55 transition-colors"
+              style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+              aria-label="Back to my cars"
+            >
+              <ChevronLeft size={20} />
+            </Link>
+            <Link
+              href={`/car/${car.slug}/edit`}
+              className="pointer-events-auto w-10 h-10 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/45 active:bg-black/55 transition-colors"
+              style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+              aria-label="Edit car"
+            >
+              <Pencil size={15} />
+            </Link>
+          </div>
+        )}
+
         {/* Gradient scrim — darkens bottom of photo for legibility */}
         <div
           aria-hidden="true"
@@ -399,14 +424,6 @@ export default async function CarPage({
 
           {isOwner && (
             <>
-              <Link
-                href={`/car/${car.slug}/edit`}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-ink/15 rounded-input text-ink hover:bg-ink/5 transition-colors"
-              >
-                <Pencil size={13} />
-                Edit
-              </Link>
-
               {!isSold && (
                 <Link
                   href={`/car/${car.slug}/events/new?type=sold`}

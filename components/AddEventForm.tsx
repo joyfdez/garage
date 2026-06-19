@@ -170,7 +170,7 @@ export function AddEventForm({
       {/* Type selector */}
       <div>
         <p className="text-xs text-ink/50 mb-2">What kind of update is this?</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`grid gap-2 ${isSold ? "grid-cols-2" : "grid-cols-3"}`}>
           <button
             type="button"
             onClick={() => setType("build")}
@@ -182,7 +182,7 @@ export function AddEventForm({
           >
             <Hammer size={22} strokeWidth={type === "build" ? 2 : 1.5} />
             <span className="font-display font-bold text-sm">Build update</span>
-            <span className="text-xs text-center leading-snug opacity-70 px-2">
+            <span className="text-xs text-center leading-snug opacity-70 px-1">
               Mod, upgrade, or install
             </span>
           </button>
@@ -197,29 +197,28 @@ export function AddEventForm({
           >
             <Wrench size={22} strokeWidth={type === "fix" ? 2 : 1.5} />
             <span className="font-display font-bold text-sm">Fix / repair</span>
-            <span className="text-xs text-center leading-snug opacity-70 px-2">
+            <span className="text-xs text-center leading-snug opacity-70 px-1">
               Diagnosis, repair, service
             </span>
           </button>
+          {!isSold && (
+            <button
+              type="button"
+              onClick={() => setType("sold")}
+              className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
+                type === "sold"
+                  ? "border-[#FF5A1F] bg-[#FF5A1F]/5 text-[#FF5A1F]"
+                  : "border-card text-ink/40"
+              }`}
+            >
+              <Tag size={22} strokeWidth={type === "sold" ? 2 : 1.5} />
+              <span className="font-display font-bold text-sm">Mark as sold</span>
+              <span className="text-xs text-center leading-snug opacity-70 px-1">
+                Record the handover
+              </span>
+            </button>
+          )}
         </div>
-
-        {!isSold && (
-          <button
-            type="button"
-            onClick={() => setType("sold")}
-            className={`mt-2 w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 transition-colors ${
-              type === "sold"
-                ? "border-[#FF5A1F] bg-[#FF5A1F]/5 text-[#FF5A1F]"
-                : "border-card text-ink/40"
-            }`}
-          >
-            <Tag size={18} strokeWidth={type === "sold" ? 2 : 1.5} />
-            <div className="text-left">
-              <span className="font-display font-bold text-sm block">Mark as sold</span>
-              <span className="text-xs opacity-70">Record the handover</span>
-            </div>
-          </button>
-        )}
       </div>
 
       {/* ── Build / Fix fields ── */}

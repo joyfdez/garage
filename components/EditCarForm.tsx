@@ -434,7 +434,7 @@ export function EditCarForm({
                   name="purchase_date"
                   type="date"
                   defaultValue={car.purchaseDate ?? ""}
-                  className="input-field w-full pl-9"
+                  className="input-field w-full max-w-full pl-9"
                 />
               </div>
             </div>
