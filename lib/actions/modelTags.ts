@@ -39,9 +39,13 @@ export async function toggleModelTag(
     const { error } = await supabase
       .from("user_model_tags")
       .insert({ user_id: user.id, model_id: modelId, tag_type: tagType });
-    if (error) console.error("[toggleModelTag] insert error:", error.code, error.message, error.details);
-    dbError = error?.message;
-    tagged  = true;
+    // 23505 = unique_violation: concurrent request already inserted the same tag.
+    // The desired state (tag exists) is already satisfied — treat as success.
+    if (error && error.code !== "23505") {
+      console.error("[toggleModelTag] insert error:", error.code, error.message, error.details);
+      dbError = error.message;
+    }
+    tagged = true;
   }
 
   if (!dbError) {
