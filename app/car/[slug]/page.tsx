@@ -8,6 +8,7 @@ import { CarTabs } from "@/components/CarTabs";
 import { CarHero, type HeroPhoto } from "@/components/CarHero";
 import {
   FUEL_OPTIONS, BODY_TYPE_OPTIONS, DRIVETRAIN_OPTIONS, ACQUISITION_OPTIONS,
+  getCarColorTint,
 } from "@/lib/car-options";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 import { UndoSaleButton } from "@/components/UndoSaleButton";
@@ -79,7 +80,7 @@ export default async function CarPage({
     .select(`
       id, slug, year, visibility, nickname, cover_photo_path,
       engine, transmission, color, location, current_owner_id,
-      fuel, drivetrain, horsepower, body_type,
+      fuel, drivetrain, horsepower, body_type, color_base,
       model:car_models(make, model, generation, chassis_code),
       custom_make, custom_model, custom_generation,
       owner:profiles!current_owner_id(username, display_name, avatar_url)
@@ -243,6 +244,9 @@ export default async function CarPage({
       : null,
   ].filter(Boolean) as string[];
 
+  const colorTint = getCarColorTint((car as { color_base?: string | null }).color_base);
+  const tintRgb = colorTint ? `${colorTint.rgb[0]}, ${colorTint.rgb[1]}, ${colorTint.rgb[2]}` : null;
+
   return (
     <div className="bg-paper min-h-dvh page-enter">
 
@@ -348,6 +352,11 @@ export default async function CarPage({
         </div>
       </CarHero>
 
+      {/* ── Spot 1: 2px color accent stripe at hero/spec boundary ── */}
+      {colorTint?.stripe && tintRgb && (
+        <div style={{ height: 2, background: `rgba(${tintRgb}, 0.42)` }} aria-hidden="true" />
+      )}
+
       {/* ── Below-hero: nickname · ownership · actions ──────────────────────── */}
       <div className="px-5 pt-4 pb-2 fade-rise" style={{ "--rise-delay": "40ms" } as React.CSSProperties}>
         {/* Nickname */}
@@ -361,7 +370,11 @@ export default async function CarPage({
             {specChips.map((chip) => (
               <span
                 key={chip}
-                className="px-2.5 py-1 rounded-full bg-card text-xs text-ink/60 font-medium"
+                className={`px-2.5 py-1 rounded-full text-xs text-ink/60 font-medium${colorTint?.chipWash && tintRgb ? "" : " bg-card"}`}
+                style={colorTint?.chipWash && tintRgb ? {
+                  background: `rgba(${tintRgb}, 0.08)`,
+                  border: `1px solid rgba(${tintRgb}, 0.13)`,
+                } : undefined}
               >
                 {chip}
               </span>

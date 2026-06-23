@@ -85,3 +85,29 @@ export type BodyTypeValue     = typeof BODY_TYPE_OPTIONS[number]["value"];
 export type TransmissionValue = typeof TRANSMISSION_OPTIONS[number]["value"];
 export type AcquisitionValue  = typeof ACQUISITION_OPTIONS[number]["value"];
 export type CurrencyValue     = typeof CURRENCIES[number]["value"];
+
+// Muted RGB tint derived from color_base for the car profile accent treatment.
+// stripe: thin 2px line at the hero/spec boundary.
+// chipWash: faint hue on spec chips.
+// Light colors (white/silver/beige/gold) and black/other: no tint applied.
+type ColorTint = { rgb: [number, number, number]; stripe: boolean; chipWash: boolean };
+
+const COLOR_TINT_MAP: Partial<Record<BaseColorValue, ColorTint>> = {
+  red:    { rgb: [170,  48,  48], stripe: true,  chipWash: true  },
+  green:  { rgb: [ 32,  92,  54], stripe: true,  chipWash: true  },
+  blue:   { rgb: [ 42,  80, 165], stripe: true,  chipWash: true  },
+  brown:  { rgb: [ 95,  55,  28], stripe: true,  chipWash: true  },
+  maroon: { rgb: [115,  28,  28], stripe: true,  chipWash: true  },
+  orange: { rgb: [175,  78,  28], stripe: true,  chipWash: true  },
+  pink:   { rgb: [165,  48, 115], stripe: true,  chipWash: true  },
+  purple: { rgb: [100,  45, 170], stripe: true,  chipWash: true  },
+  violet: { rgb: [ 78,  38, 155], stripe: true,  chipWash: true  },
+  yellow: { rgb: [175, 145,  28], stripe: true,  chipWash: false },
+  gray:   { rgb: [140, 138, 132], stripe: true,  chipWash: false },
+  // black, white, silver, beige, gold, other → omitted → null return
+};
+
+export function getCarColorTint(colorBase: string | null | undefined): ColorTint | null {
+  if (!colorBase) return null;
+  return COLOR_TINT_MAP[colorBase as BaseColorValue] ?? null;
+}
