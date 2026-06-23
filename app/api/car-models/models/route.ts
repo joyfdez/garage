@@ -6,13 +6,21 @@ export async function GET(req: NextRequest) {
   if (!make) return NextResponse.json([]);
 
   const supabase = await createClient();
+
+  const { data: makeRow } = await supabase
+    .from("makes")
+    .select("id")
+    .eq("name", make)
+    .single();
+
+  if (!makeRow) return NextResponse.json([]);
+
   const { data, error } = await supabase
-    .from("car_models")
-    .select("model")
-    .eq("make", make)
-    .order("model");
+    .from("models")
+    .select("name")
+    .eq("make_id", makeRow.id)
+    .order("name");
 
   if (error) return NextResponse.json([], { status: 500 });
-  const models = [...new Set((data ?? []).map((r) => r.model))];
-  return NextResponse.json(models);
+  return NextResponse.json((data ?? []).map((r) => r.name));
 }

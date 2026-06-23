@@ -4,11 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("car_models")
-    .select("make")
-    .order("make");
+    .from("makes")
+    .select("name")
+    .order("name");
 
   if (error) return NextResponse.json([], { status: 500 });
-  const makes = [...new Set((data ?? []).map((r) => r.make))];
-  return NextResponse.json(makes);
+  return NextResponse.json((data ?? []).map((r) => r.name));
 }
