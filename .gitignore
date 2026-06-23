@@ -27,3 +27,5 @@ next-env.d.ts
 
 # supabase
 supabase/.temp/
+backup_antes_fase3.sql
+*.sql
