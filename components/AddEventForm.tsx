@@ -6,7 +6,7 @@ import { X, Hammer, Wrench, Tag, Eye, EyeOff, DollarSign } from "lucide-react";
 import { createEvent, EventState } from "@/lib/actions/event";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { CURRENCIES } from "@/lib/car-options";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 
@@ -61,18 +61,24 @@ export function AddEventForm({
   const saleLockedCurrency = purchaseCurrency || "EUR";
 
   useEffect(() => {
-    if (eventState && "carSlug" in eventState) {
+    if (!eventState) return;
+    if ("carSlug" in eventState) {
       setNavigating(true);
-      toast.success("Update posted", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Update posted");
       router.push(`/car/${eventState.carSlug}/events/${eventState.eventId}`);
+    } else if ("error" in eventState) {
+      toast.error(eventState.error);
     }
   }, [eventState, router]);
 
   useEffect(() => {
-    if (soldState && "slug" in soldState) {
+    if (!soldState) return;
+    if ("slug" in soldState) {
       setNavigating(true);
-      toast.success("Marked as sold", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Marked as sold");
       router.push(`/car/${soldState.slug}`);
+    } else if ("error" in soldState) {
+      toast.error(soldState.error);
     }
   }, [soldState, router]);
 

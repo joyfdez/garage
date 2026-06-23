@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { undoSale } from "@/lib/actions/car";
 
 export function UndoSaleButton({ carId, carSlug }: { carId: string; carSlug: string }) {
@@ -20,7 +20,7 @@ export function UndoSaleButton({ carId, carSlug }: { carId: string; carSlug: str
         setWorking(false);
         setConfirming(false);
       } else {
-        toast.success("Sale undone — car is back in your garage", { style: { borderLeft: "3px solid #1A3A2E" } });
+        toast.success("Sale undone — car is back in your garage");
         router.push(`/car/${carSlug}`);
         router.refresh();
       }

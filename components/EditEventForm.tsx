@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Hammer, Wrench } from "lucide-react";
 import { updateEvent, EventState } from "@/lib/actions/event";
 import { CURRENCIES } from "@/lib/car-options";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 
@@ -78,10 +78,13 @@ export function EditEventForm({
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (state && "carSlug" in state) {
+    if (!state) return;
+    if ("carSlug" in state) {
       setNavigating(true);
-      toast.success("Event updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Event updated");
       router.push(`/car/${state.carSlug}/events/${state.eventId}`);
+    } else if ("error" in state) {
+      toast.error(state.error);
     }
   }, [state, router]);
 

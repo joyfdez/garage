@@ -352,9 +352,9 @@ export default async function CarPage({
         </div>
       </CarHero>
 
-      {/* ── Spot 1: 2px color accent stripe at hero/spec boundary ── */}
+      {/* ── Spot 1: 3px color accent stripe at hero/spec boundary ── */}
       {colorTint?.stripe && tintRgb && (
-        <div style={{ height: 2, background: `rgba(${tintRgb}, 0.42)` }} aria-hidden="true" />
+        <div style={{ height: 3, background: `rgba(${tintRgb}, 0.55)` }} aria-hidden="true" />
       )}
 
       {/* ── Below-hero: nickname · ownership · actions ──────────────────────── */}
@@ -372,8 +372,8 @@ export default async function CarPage({
                 key={chip}
                 className={`px-2.5 py-1 rounded-full text-xs text-ink/60 font-medium${colorTint?.chipWash && tintRgb ? "" : " bg-card"}`}
                 style={colorTint?.chipWash && tintRgb ? {
-                  background: `rgba(${tintRgb}, 0.08)`,
-                  border: `1px solid rgba(${tintRgb}, 0.13)`,
+                  background: `rgba(${tintRgb}, 0.14)`,
+                  border: `1px solid rgba(${tintRgb}, 0.22)`,
                 } : undefined}
               >
                 {chip}

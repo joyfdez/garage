@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { updateSaleDetails, CarState } from "@/lib/actions/car";
 import { CURRENCIES } from "@/lib/car-options";
 import imageCompression from "browser-image-compression";
@@ -78,10 +78,13 @@ export function EditSaleForm({
     : null;
 
   useEffect(() => {
-    if (state && "slug" in state) {
+    if (!state) return;
+    if ("slug" in state) {
       setNavigating(true);
-      toast.success("Sale details updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Sale details updated");
       router.push(`/car/${state.slug}`);
+    } else if ("error" in state) {
+      toast.error(state.error);
     }
   }, [state, router]);
 

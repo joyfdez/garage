@@ -15,7 +15,7 @@ import {
 import { CarModel } from "@/components/BrowsePicker";
 import { ModelCard } from "@/components/ModelCard";
 import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -306,14 +306,10 @@ export function ProfileShell({
           wasTagged ? next.add(key) : next.delete(key);
           return next;
         });
-        toast.error("Couldn't save — please try again", {
-          style: { borderLeft: "3px solid #ef4444" },
-        });
+        toast.error("Couldn't save — please try again");
       } else {
         const label = tagType === "driven" ? "Driven" : "Wishlist";
-        toast(wasTagged ? `Removed from ${label}` : `Added to ${label}`, {
-          style: { borderLeft: "3px solid #1A3A2E" },
-        });
+        toast.info(wasTagged ? `Removed from ${label}` : `Added to ${label}`);
       }
     } finally {
       setPending(null);

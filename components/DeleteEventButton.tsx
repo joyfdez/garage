@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { deleteEvent } from "@/lib/actions/event";
 
 export function DeleteEventButton({ eventId, carSlug }: { eventId: string; carSlug: string }) {
@@ -20,7 +20,7 @@ export function DeleteEventButton({ eventId, carSlug }: { eventId: string; carSl
         setDeleting(false);
         setConfirming(false);
       } else {
-        toast.success("Event deleted", { style: { borderLeft: "3px solid #1A3A2E" } });
+        toast.success("Event deleted");
         router.push(`/car/${carSlug}`);
       }
     } catch {

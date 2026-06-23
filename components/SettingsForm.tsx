@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CropModal } from "@/components/CropModal";
 import { CountrySelect } from "@/components/CountrySelect";
 import { CURRENCIES } from "@/lib/car-options";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export interface ProfileForSettings {
   username: string;
@@ -76,18 +76,18 @@ export function SettingsForm({
   useEffect(() => {
     if (!profileState) return;
     if (profileState.success) {
-      toast.success("Profile saved", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Profile saved");
     } else if (profileState.error) {
-      toast.error(profileState.error, { style: { borderLeft: "3px solid #ef4444" } });
+      toast.error(profileState.error);
     }
   }, [profileState]);
 
   useEffect(() => {
     if (!pwState) return;
     if (pwState.success) {
-      toast.success("Password updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Password updated");
     } else if (pwState.error) {
-      toast.error(pwState.error, { style: { borderLeft: "3px solid #ef4444" } });
+      toast.error(pwState.error);
     }
   }, [pwState]);
 
@@ -102,9 +102,9 @@ export function SettingsForm({
     if (usernameState.success) {
       const newUsername = usernameInputRef.current?.value ?? currentUsername;
       setCurrentUsername(newUsername);
-      toast.success("Username updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Username updated");
     } else if (usernameState.error) {
-      toast.error(usernameState.error, { style: { borderLeft: "3px solid #ef4444" } });
+      toast.error(usernameState.error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usernameState]);
@@ -139,13 +139,13 @@ export function SettingsForm({
       const saveErr = await updateAvatarUrl(urlWithBust);
       if (saveErr) {
         setPhotoError(saveErr);
-        toast.error("Couldn't save avatar", { style: { borderLeft: "3px solid #ef4444" } });
+        toast.error("Couldn't save avatar");
         return;
       }
       setAvatarUrl(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
-      toast.success("Photo updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Photo updated");
     } catch (err) {
       console.error("[handleAvatarSave] unexpected error:", err);
       setPhotoError("Unexpected error — check console.");
@@ -178,13 +178,13 @@ export function SettingsForm({
       const saveErr = await updateCoverPhotoPath(urlWithBust);
       if (saveErr) {
         setPhotoError(saveErr);
-        toast.error("Couldn't save cover", { style: { borderLeft: "3px solid #ef4444" } });
+        toast.error("Couldn't save cover");
         return;
       }
       setCoverPath(urlWithBust);
       setCropSrc(null);
       setCropTarget(null);
-      toast.success("Cover updated", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Cover updated");
     } catch (err) {
       console.error("[handleCoverSave] unexpected error:", err);
       setPhotoError("Unexpected error — check console.");
@@ -301,7 +301,11 @@ export function SettingsForm({
                   className="input-field w-full pl-7"
                 />
               </div>
-              <p className="text-xs text-ink/30 mt-1">Lowercase letters, numbers, underscores. 2–30 chars.</p>
+              <p className="text-xs text-ink/30 mt-1">Letters, numbers, underscores, hyphens. 2–30 chars.</p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3.5 py-2.5 text-xs text-amber-800 leading-relaxed">
+              <span className="font-semibold">Changing your username breaks existing links.</span>{" "}
+              Anyone who bookmarked or shared your profile URL or car pages will get a 404 until they update the link.
             </div>
             {usernameState?.error && (
               <p className="text-sm text-red-500">{usernameState.error}</p>

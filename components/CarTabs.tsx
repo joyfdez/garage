@@ -8,7 +8,7 @@ import { PhotoGallery } from "@/components/PhotoGallery";
 import { convertMileage, formatMileage, type MileageUnit } from "@/lib/mileage";
 import { CURRENCIES } from "@/lib/car-options";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { deleteEvent } from "@/lib/actions/event";
 
 type EventType = "build" | "fix";
@@ -146,7 +146,7 @@ function EventCard({
         setDeleting(false);
         setConfirming(false);
       } else {
-        toast.success("Event deleted", { style: { borderLeft: "3px solid #1A3A2E" } });
+        toast.success("Event deleted");
         router.refresh();
       }
     } catch {

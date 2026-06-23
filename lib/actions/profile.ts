@@ -139,8 +139,8 @@ export async function updateUsername(
 ): Promise<UsernameState> {
   const newUsername = (formData.get("username") as string ?? "").trim().toLowerCase();
 
-  if (!/^[a-z0-9_]{2,30}$/.test(newUsername)) {
-    return { error: "Username must be 2–30 characters: lowercase letters, numbers, and underscores only." };
+  if (!/^[a-z0-9_-]{2,30}$/.test(newUsername)) {
+    return { error: "Username must be 2–30 characters: lowercase letters, numbers, underscores, and hyphens only." };
   }
 
   const supabase = await createClient();

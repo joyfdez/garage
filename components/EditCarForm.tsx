@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, useCallback } from "react"
 import { useRouter } from "next/navigation";
 import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar } from "lucide-react";
 import { ColorPicker } from "@/components/ColorPicker";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   updateCar,
   setCarCover,
@@ -101,10 +101,13 @@ export function EditCarForm({
   }
 
   useEffect(() => {
-    if (state && "slug" in state) {
+    if (!state) return;
+    if ("slug" in state) {
       setNavigating(true);
-      toast.success("Changes saved", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Changes saved");
       router.push(`/car/${state.slug}`);
+    } else if ("error" in state) {
+      toast.error(state.error);
     }
   }, [state, router]);
 
@@ -123,7 +126,7 @@ export function EditCarForm({
         setDeleting(false);
         return;
       }
-      toast.success("Car deleted", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Car deleted");
       router.push("/garage");
     } catch {
       setDeleteError("Something went wrong. Please try again.");

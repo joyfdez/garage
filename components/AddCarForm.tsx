@@ -9,7 +9,7 @@ import {
   Eye, EyeOff, Calendar,
 } from "lucide-react";
 import { createCar, CarState } from "@/lib/actions/car";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
@@ -180,11 +180,9 @@ export function AddCarForm({
     if (state && "slug" in state) {
       setNavigating(true);
       state.warnings?.forEach((w) =>
-        toast.warning(w, { style: { borderLeft: "3px solid #D97706" } })
+        toast.warning(w)
       );
-      toast.success("Car added to your garage", {
-        style: { borderLeft: "3px solid #1A3A2E" },
-      });
+      toast.success("Car added to your garage");
       router.push(`/car/${state.slug}`);
     }
   }, [state, router]);

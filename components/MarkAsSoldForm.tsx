@@ -4,7 +4,7 @@ import { useActionState, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { DollarSign, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export function MarkAsSoldForm({
   carId,
@@ -29,10 +29,13 @@ export function MarkAsSoldForm({
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    if (state && "slug" in state) {
+    if (!state) return;
+    if ("slug" in state) {
       setNavigating(true);
-      toast.success("Marked as sold", { style: { borderLeft: "3px solid #1A3A2E" } });
+      toast.success("Marked as sold");
       router.push(`/car/${state.slug}`);
+    } else if ("error" in state) {
+      toast.error(state.error);
     }
   }, [state, router]);
 

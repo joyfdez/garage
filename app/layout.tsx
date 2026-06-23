@@ -75,7 +75,7 @@ export default function RootLayout({
         <InstallPrompt />
         <Toaster
           position="bottom-center"
-          offset={80}
+          offset="calc(4.5rem + env(safe-area-inset-bottom, 0px))"
           toastOptions={{
             style: {
               background: "#FBFAF7",
