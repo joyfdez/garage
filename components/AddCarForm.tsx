@@ -34,13 +34,14 @@ function CascadePicker({
 }: {
   onResolve: (model: CarModel, year: string) => void;
 }) {
-  const [makes, setMakes]         = useState<string[]>([]);
-  const [cMake, setCMake]         = useState("");
-  const [cModels, setCModels]     = useState<string[]>([]);
-  const [cModel, setCModel]       = useState("");
-  const [generations, setGens]    = useState<CarModel[] | null>(null);
-  const [fetching, setFetching]   = useState(false);
-  const [pickIdx, setPickIdx]     = useState(0);
+  const [makes, setMakes]             = useState<string[]>([]);
+  const [cMake, setCMake]             = useState("");
+  const [cModels, setCModels]         = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [cModel, setCModel]           = useState("");
+  const [generations, setGens]        = useState<CarModel[] | null>(null);
+  const [fetching, setFetching]       = useState(false);
+  const [pickIdx, setPickIdx]         = useState(0);
 
   // stable ref so the effect doesn't re-run when the callback identity changes
   const onResolveRef = useRef(onResolve);
@@ -51,10 +52,16 @@ function CascadePicker({
   }, []);
 
   useEffect(() => {
-    setCModel(""); setGens(null);
-    if (!cMake) { setCModels([]); return; }
+    setCModel("");
+    setCModels([]);
+    setGens(null);
+    if (!cMake) { setLoadingModels(false); return; }
+    setLoadingModels(true);
     fetch(`/api/car-models/models?make=${encodeURIComponent(cMake)}`)
-      .then((r) => r.json()).then(setCModels).catch(() => {});
+      .then((r) => r.json())
+      .then(setCModels)
+      .catch(() => {})
+      .finally(() => setLoadingModels(false));
   }, [cMake]);
 
   useEffect(() => {
@@ -102,10 +109,17 @@ function CascadePicker({
             <select
               value={cModel}
               onChange={(e) => setCModel(e.target.value)}
-              className="input-field w-full appearance-none pr-8"
+              disabled={loadingModels}
+              className="input-field w-full appearance-none pr-8 disabled:opacity-50"
             >
-              <option value="">Select model…</option>
-              {cModels.map((mo) => <option key={mo} value={mo}>{mo}</option>)}
+              {loadingModels ? (
+                <option value="">Loading models…</option>
+              ) : (
+                <>
+                  <option value="">Select model…</option>
+                  {cModels.map((mo) => <option key={mo} value={mo}>{mo}</option>)}
+                </>
+              )}
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
           </div>
