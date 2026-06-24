@@ -11,11 +11,15 @@ import {
   Settings,
   Plus,
   Lock,
+  Users,
+  Share2,
+  Check,
 } from "lucide-react";
 import { CarModel } from "@/components/BrowsePicker";
 import { ModelCard } from "@/components/ModelCard";
 import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
 import { toast } from "@/lib/toast";
+import { FollowButton } from "@/components/FollowButton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,6 +51,11 @@ export interface ProfileShellProps {
   initialTagKeys: string[];
   supabaseUrl: string;
   isOwner: boolean;
+  profileUserId: string;
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+  viewerIsLoggedIn: boolean;
 }
 
 type Tab = "owned-now" | "owned" | "driven" | "wishlist";
@@ -279,6 +288,11 @@ export function ProfileShell({
   initialTagKeys,
   supabaseUrl,
   isOwner,
+  profileUserId,
+  followerCount,
+  followingCount,
+  isFollowing,
+  viewerIsLoggedIn,
 }: ProfileShellProps) {
   const [activeTab, setActiveTab] = useState<Tab>("owned-now");
 
@@ -287,6 +301,20 @@ export function ProfileShell({
     () => new Set(initialTagKeys)
   );
   const [pending, setPending] = useState<string | null>(null);
+
+  const [liveFollowerCount, setLiveFollowerCount] = useState(followerCount);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  async function handleShareProfile() {
+    const url = `${window.location.origin}/u/${username}`;
+    const title = `${displayName ?? "@" + username} on Garage`;
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch { /* cancelled */ }
+    }
+    await navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }
 
   async function handleToggle(modelId: string, tagType: TagType) {
     const key = `${modelId}:${tagType}`;
@@ -368,21 +396,70 @@ export function ProfileShell({
             </div>
           )}
 
-          {isOwner && (
-            <Link
-              href="/settings"
+          <div className="flex items-center gap-1.5">
+            {isOwner ? (
+              <>
+                <Link
+                  href="/people"
+                  className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-card bg-white border border-ink/8 mb-1"
+                >
+                  <Users size={13} />
+                  Find people
+                </Link>
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-card bg-white border border-ink/8 mb-1"
+                >
+                  <Settings size={13} />
+                  Edit profile
+                </Link>
+              </>
+            ) : viewerIsLoggedIn ? (
+              <FollowButton
+                followingId={profileUserId}
+                initialIsFollowing={isFollowing}
+                onFollowChange={(isNowFollowing) =>
+                  setLiveFollowerCount((prev) =>
+                    isNowFollowing ? prev + 1 : prev - 1
+                  )
+                }
+              />
+            ) : null}
+            <button
+              onClick={handleShareProfile}
               className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-card bg-white border border-ink/8 mb-1"
             >
-              <Settings size={13} />
-              Edit profile
-            </Link>
-          )}
+              {shareCopied ? (
+                <Check size={13} className="text-green-bright" />
+              ) : (
+                <Share2 size={13} />
+              )}
+              {shareCopied ? "Copied!" : "Share"}
+            </button>
+          </div>
         </div>
 
         <h1 className="font-display font-extrabold text-xl leading-tight text-ink">
           {displayName ?? `@${username}`}
         </h1>
-        <p className="text-hint text-sm mb-2">@{username}</p>
+        <p className="text-hint text-sm mb-1">@{username}</p>
+
+        <div className="flex items-center gap-3 text-xs mb-2">
+          <Link
+            href={`/u/${username}/followers`}
+            className="text-ink-muted hover:text-ink transition-colors"
+          >
+            <span className="font-bold text-ink">{liveFollowerCount}</span>{" "}
+            {liveFollowerCount === 1 ? "follower" : "followers"}
+          </Link>
+          <span className="text-hint">·</span>
+          <Link
+            href={`/u/${username}/following`}
+            className="text-ink-muted hover:text-ink transition-colors"
+          >
+            <span className="font-bold text-ink">{followingCount}</span> following
+          </Link>
+        </div>
 
         {bio && (
           <p className="text-sm text-ink/70 leading-relaxed mb-2">{bio}</p>

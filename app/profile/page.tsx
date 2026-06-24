@@ -31,8 +31,8 @@ export default async function ProfilePage() {
 
   if (!profile) redirect("/onboarding");
 
-  // Fetch in parallel: ownerships + model tags
-  const [{ data: rawOwnerships }, { data: rawTags }] = await Promise.all([
+  // Fetch in parallel: ownerships + model tags + follow counts
+  const [{ data: rawOwnerships }, { data: rawTags }, { count: followerCount }, { count: followingCount }] = await Promise.all([
     supabase
       .from("ownerships")
       .select(`
@@ -56,6 +56,16 @@ export default async function ProfilePage() {
         )
       `)
       .eq("user_id", user.id),
+
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", user.id),
+
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", user.id),
   ]);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -136,6 +146,11 @@ export default async function ProfilePage() {
       initialTagKeys={initialTagKeys}
       supabaseUrl={supabaseUrl}
       isOwner
+      profileUserId={profile.id}
+      followerCount={followerCount ?? 0}
+      followingCount={followingCount ?? 0}
+      isFollowing={false}
+      viewerIsLoggedIn={true}
     />
   );
 }

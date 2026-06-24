@@ -56,8 +56,8 @@ export default async function PublicProfilePage({
 
   const isOwner = user?.id === profile.id;
 
-  // Fetch in parallel: ownerships + model tags
-  const [{ data: rawOwnerships }, { data: rawTags }] = await Promise.all([
+  // Fetch in parallel: ownerships + model tags + follow counts + isFollowing
+  const [{ data: rawOwnerships }, { data: rawTags }, { count: followerCount }, { count: followingCount }, followResult] = await Promise.all([
     supabase
       .from("ownerships")
       .select(`
@@ -81,6 +81,27 @@ export default async function PublicProfilePage({
         )
       `)
       .eq("user_id", profile.id),
+
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", profile.id),
+
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", profile.id),
+
+    (async () => {
+      if (!user || isOwner) return null;
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user.id)
+        .eq("following_id", profile.id)
+        .maybeSingle();
+      return data;
+    })(),
   ]);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -168,6 +189,11 @@ export default async function PublicProfilePage({
       initialTagKeys={initialTagKeys}
       supabaseUrl={supabaseUrl}
       isOwner={isOwner}
+      profileUserId={profile.id}
+      followerCount={followerCount ?? 0}
+      followingCount={followingCount ?? 0}
+      isFollowing={!!followResult}
+      viewerIsLoggedIn={!!user}
     />
   );
 }
