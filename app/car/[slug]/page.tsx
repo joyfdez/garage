@@ -119,22 +119,38 @@ export default async function CarPage({
   const saleExtras = saleExtrasResult.data;
   const isSold = !!(ownership?.end_date);
 
-  // Viewer's preferred mileage unit (default km for logged-out viewers)
-  const viewerUnit: MileageUnit = user
-    ? await supabase.from("profiles").select("mileage_unit").eq("id", user.id).single()
-        .then(({ data }) => (data?.mileage_unit === "mi" ? "mi" : "km"))
-    : "km";
+  // Fetch in parallel: viewer mileage unit + latest mileage + events + photos
+  const [
+    profileResult,
+    { data: latestMileageRow },
+    { data: rawEvents },
+    { data: allPhotos },
+  ] = await Promise.all([
+    user
+      ? supabase.from("profiles").select("mileage_unit").eq("id", user.id).single()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("car_events")
+      .select("mileage_value, mileage_unit")
+      .eq("car_id", car.id)
+      .not("mileage_value", "is", null)
+      .order("event_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("car_events")
+      .select("id, type, title, description, details, event_date, mileage_value, mileage_unit, amount")
+      .eq("car_id", car.id)
+      .order("event_date", { ascending: false }),
+    supabase
+      .from("photos")
+      .select("id, storage_path, event_id, position")
+      .eq("car_id", car.id)
+      .order("position"),
+  ]);
 
-  // Derive current mileage from the most recent event that has a reading
-  const { data: latestMileageRow } = await supabase
-    .from("car_events")
-    .select("mileage_value, mileage_unit")
-    .eq("car_id", car.id)
-    .not("mileage_value", "is", null)
-    .order("event_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const viewerUnit: MileageUnit = profileResult.data?.mileage_unit === "mi" ? "mi" : "km";
 
   const currentMileage = latestMileageRow?.mileage_value
     ? {
@@ -147,19 +163,7 @@ export default async function CarPage({
       }
     : null;
 
-  const { data: rawEvents } = await supabase
-    .from("car_events")
-    .select("id, type, title, description, details, event_date, mileage_value, mileage_unit, amount")
-    .eq("car_id", car.id)
-    .order("event_date", { ascending: false });
-
   const events = rawEvents ?? [];
-
-  const { data: allPhotos } = await supabase
-    .from("photos")
-    .select("id, storage_path, event_id, position")
-    .eq("car_id", car.id)
-    .order("position");
 
   // Index photos by event_id first (needed to build eventsWithPhotos)
   const photosByEvent: Record<string, { id: string; storage_path: string }[]> = {};

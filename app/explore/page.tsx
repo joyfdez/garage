@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ExploreSearch } from "@/components/ExploreSearch";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Explore — Garage",
   description: "Tag car models you've driven or want to drive.",
