@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { PlusCircle, Compass, User } from "lucide-react";
 
 const nav = [
-  { href: "/garage/new", label: "Add",     icon: PlusCircle },
-  { href: "/explore",    label: "Explore", icon: Compass    },
-  { href: "/profile",    label: "Profile", icon: User       },
+  { href: "/add",     label: "Add",     icon: PlusCircle },
+  { href: "/explore", label: "Explore", icon: Compass    },
+  { href: "/profile", label: "Profile", icon: User       },
 ] as const;
 
 const HIDDEN_PREFIXES = ["/auth", "/onboarding"];
@@ -21,8 +21,8 @@ function isProfileActive(pathname: string) {
 }
 
 function isNavActive(href: string, pathname: string): boolean {
-  // Add: exact match only — avoid lighting up on /car/.../events/new etc.
-  if (href === "/garage/new") return pathname === "/garage/new";
+  // Add: hub and its sub-routes (/add/car-update, /add/driven, /add/wishlist)
+  if (href === "/add") return pathname === "/add" || pathname.startsWith("/add/");
   // Profile: covers /profile, /u/*, /settings
   if (href === "/profile") return isProfileActive(pathname);
   // Others: exact or sub-path
