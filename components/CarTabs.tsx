@@ -173,6 +173,7 @@ function EventCard({
             <img
               src={`${supabaseUrl}/storage/v1/object/public/car-photos/${coverPhoto.storage_path}`}
               alt={event.title}
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
             />
             {/* +N badge — shows how many additional photos exist */}
@@ -367,7 +368,7 @@ function PurchaseCard({
       {photoUrl && (
         <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photoUrl} alt="Purchased" className="w-full h-full object-cover" />
+          <img src={photoUrl} alt="Purchased" loading="lazy" className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -460,7 +461,7 @@ function SoldCard({
       {photoUrl && (
         <div className="rounded-card overflow-hidden aspect-[4/3] mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photoUrl} alt="Sold" className="w-full h-full object-cover" />
+          <img src={photoUrl} alt="Sold" loading="lazy" className="w-full h-full object-cover" />
         </div>
       )}
 
