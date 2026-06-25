@@ -352,7 +352,43 @@ export function AddCarForm({
           value={p.path} />
       ))}
 
-      {/* ── Section 1: Find your car ── */}
+      {/* ── Section 1: Photos ── */}
+      <section>
+        <h2 className="font-display font-bold text-lg mb-1">Photos</h2>
+        <p className="text-ink/40 text-xs mb-4">First photo becomes the cover. Optional.</p>
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {photos.map((p, i) => (
+              <div key={p.path} className="relative w-20 h-20 rounded-lg overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.previewUrl} alt="" className="w-full h-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute top-1 left-1 text-[9px] bg-racing-green text-white px-1 rounded font-medium">Cover</span>
+                )}
+                <button type="button" onClick={() => removePhoto(p.path)}
+                  className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 text-white">
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-racing-green/40 hover:text-racing-green transition-colors disabled:opacity-50"
+        >
+          {uploading ? "Uploading…" : "+ Add photos"}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only"
+          onChange={(e) => handlePhotos(e.target.files)} />
+        {uploadError && (
+          <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
+        )}
+      </section>
+
+      {/* ── Section 2: Find your car ── */}
       <section className="space-y-4">
         <h2 className="font-display font-bold text-lg">Find your car</h2>
 
@@ -534,7 +570,7 @@ export function AddCarForm({
         )}
       </section>
 
-      {/* ── Section 2: Details ── */}
+      {/* ── Section 3: Details ── */}
       <section>
         <h2 className="font-display font-bold text-lg mb-4">Details</h2>
         <div className="space-y-3">
@@ -622,7 +658,13 @@ export function AddCarForm({
               <input name="color" placeholder="Dakar Yellow" className="input-field w-full" />
             </div>
           </div>
+        </div>
+      </section>
 
+      {/* ── Section 4: Identity ── */}
+      <section>
+        <h2 className="font-display font-bold text-lg mb-4">Identity</h2>
+        <div className="space-y-3">
           <div>
             <label className="text-xs text-ink/50 mb-1 block">Nickname</label>
             <input name="nickname" placeholder="Project Potato" className="input-field w-full" />
@@ -660,149 +702,111 @@ export function AddCarForm({
         </div>
       </section>
 
-      {/* ── Section 3: Photos ── */}
+      {/* ── Section 5: Purchase details ── */}
       <section>
-        <h2 className="font-display font-bold text-lg mb-1">Photos</h2>
-        <p className="text-ink/40 text-xs mb-4">First photo becomes the cover. Optional.</p>
-        {photos.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {photos.map((p, i) => (
-              <div key={p.path} className="relative w-20 h-20 rounded-lg overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.previewUrl} alt="" className="w-full h-full object-cover" />
-                {i === 0 && (
-                  <span className="absolute top-1 left-1 text-[9px] bg-racing-green text-white px-1 rounded font-medium">Cover</span>
-                )}
-                <button type="button" onClick={() => removePhoto(p.path)}
-                  className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 text-white">
-                  <X size={10} />
-                </button>
-              </div>
-            ))}
+        <h2 className="font-display font-bold text-lg mb-1">Purchase details</h2>
+        <p className="text-ink/40 text-xs mb-4">
+          When and how much you paid — this builds the car&apos;s ownership history.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-ink/50 mb-1 block">Acquired as</label>
+            <div className="relative">
+              <select name="acquisition_condition" className="input-field w-full appearance-none pr-8">
+                <option value="">Condition when acquired…</option>
+                {ACQUISITION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+            </div>
           </div>
-        )}
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-ink/20 rounded-xl text-sm text-ink/50 hover:border-racing-green/40 hover:text-racing-green transition-colors disabled:opacity-50"
-        >
-          {uploading ? "Uploading…" : "+ Add photos"}
-        </button>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only"
-          onChange={(e) => handlePhotos(e.target.files)} />
-        {uploadError && (
-          <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
-        )}
-      </section>
 
-      {/* ── Section 4: Purchase details ── */}
-      <section>
-        <details className="group min-w-0 overflow-hidden">
-          <summary className="cursor-pointer flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink/70 list-none">
-            <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
-            Purchase details
-          </summary>
-          <div className="mt-3 space-y-3">
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Acquired as</label>
+          <div>
+            <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
+            <div className="relative">
+              <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
+              <input name="purchase_date" type="date" className="input-field w-full max-w-full pl-9" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-ink/50 mb-1 block">Price paid</label>
+            <div className="flex gap-2">
               <div className="relative">
-                <select name="acquisition_condition" className="input-field w-full appearance-none pr-8">
-                  <option value="">Condition when acquired…</option>
-                  {ACQUISITION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                <select
+                  name="currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="input-field appearance-none pr-7 pl-3"
+                >
+                  {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
-                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+                <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+              </div>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30 pointer-events-none select-none">
+                  {currencySymbol}
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatInt(rawPrice)}
+                  onChange={(e) => setRawPrice(parseDigits(e.target.value))}
+                  placeholder="0"
+                  className={`input-field w-full ${currencySymbol.length === 1 ? "pl-9" : "pl-12"}`}
+                />
+                <input type="hidden" name="purchase_price" value={rawPrice} />
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setPurchasePricePublic((v) => !v)}
+              className={`flex items-center gap-1.5 text-xs mt-1.5 transition-colors ${
+                purchasePricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
+              }`}
+            >
+              {purchasePricePublic ? <Eye size={12} /> : <EyeOff size={12} />}
+              {purchasePricePublic ? "Price visible publicly" : "Price is private"}
+            </button>
+            <input type="hidden" name="purchase_price_public" value={String(purchasePricePublic)} />
+          </div>
 
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Date acquired</label>
-              <div className="relative">
-                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
-                <input name="purchase_date" type="date" className="input-field w-full max-w-full pl-9" />
+          <div>
+            <label className="text-xs text-ink/50 mb-1 block">Odometer at purchase</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatInt(rawMileage)}
+                  onChange={(e) => setRawMileage(parseDigits(e.target.value))}
+                  placeholder="84,500"
+                  className="input-field w-full"
+                />
+                <input type="hidden" name="purchase_mileage_value" value={rawMileage} />
               </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Price paid</label>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <select
-                    name="currency"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="input-field appearance-none pr-7 pl-3"
+              <div className="flex rounded-xl border border-ink/10 overflow-hidden text-sm font-medium">
+                {(["km", "mi"] as const).map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => setPurchaseMileageUnit(u)}
+                    className={`px-3 py-2 transition-colors ${
+                      purchaseMileageUnit === u
+                        ? "bg-ink text-paper"
+                        : "bg-card text-ink/50 hover:text-ink"
+                    }`}
                   >
-                    {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
-                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
-                </div>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30 pointer-events-none select-none">
-                    {currencySymbol}
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={formatInt(rawPrice)}
-                    onChange={(e) => setRawPrice(parseDigits(e.target.value))}
-                    placeholder="0"
-                    className={`input-field w-full ${currencySymbol.length === 1 ? "pl-9" : "pl-12"}`}
-                  />
-                  <input type="hidden" name="purchase_price" value={rawPrice} />
-                </div>
+                    {u}
+                  </button>
+                ))}
               </div>
-              <button
-                type="button"
-                onClick={() => setPurchasePricePublic((v) => !v)}
-                className={`flex items-center gap-1.5 text-xs mt-1.5 transition-colors ${
-                  purchasePricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
-                }`}
-              >
-                {purchasePricePublic ? <Eye size={12} /> : <EyeOff size={12} />}
-                {purchasePricePublic ? "Price visible publicly" : "Price is private"}
-              </button>
-              <input type="hidden" name="purchase_price_public" value={String(purchasePricePublic)} />
-            </div>
-
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Odometer at purchase</label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={formatInt(rawMileage)}
-                    onChange={(e) => setRawMileage(parseDigits(e.target.value))}
-                    placeholder="84,500"
-                    className="input-field w-full"
-                  />
-                  <input type="hidden" name="purchase_mileage_value" value={rawMileage} />
-                </div>
-                <div className="flex rounded-xl border border-ink/10 overflow-hidden text-sm font-medium">
-                  {(["km", "mi"] as const).map((u) => (
-                    <button
-                      key={u}
-                      type="button"
-                      onClick={() => setPurchaseMileageUnit(u)}
-                      className={`px-3 py-2 transition-colors ${
-                        purchaseMileageUnit === u
-                          ? "bg-ink text-paper"
-                          : "bg-card text-ink/50 hover:text-ink"
-                      }`}
-                    >
-                      {u}
-                    </button>
-                  ))}
-                </div>
-                <input type="hidden" name="purchase_mileage_unit" value={purchaseMileageUnit} />
-              </div>
+              <input type="hidden" name="purchase_mileage_unit" value={purchaseMileageUnit} />
             </div>
           </div>
-        </details>
+        </div>
       </section>
 
-      {/* ── Section 5: VIN ── */}
+      {/* ── Section 6: VIN ── */}
       <section>
         <details className="group">
           <summary className="cursor-pointer flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink/70 list-none">
