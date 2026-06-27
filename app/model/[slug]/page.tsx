@@ -121,7 +121,7 @@ export default async function ModelPage({
         )
         .in("model_id", genIds)
         .eq("visibility", "public")
-        .order("created_at", { ascending: false })
+        .order("year", { ascending: true })
         .limit(40),
 
       // Aggregate counts: public + user's own private (what RLS allows).
