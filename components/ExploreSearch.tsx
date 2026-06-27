@@ -1,18 +1,46 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { Search, X, ChevronDown } from "lucide-react";
-import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
-import { toast } from "@/lib/toast";
-import { BrowsePicker, CarModel } from "@/components/BrowsePicker";
-import { ModelCard } from "@/components/ModelCard";
+import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
+import { Search, X } from "lucide-react";
+import { CarModel, yearLabel } from "@/components/BrowsePicker";
 import { debounce } from "@/lib/utils/debounce";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type InitialTag = { model_id: string; tag_type: string };
+interface Make { id: string; name: string; slug: string }
+interface FeaturedModel {
+  id: string;
+  name: string;
+  slug: string;
+  make: { name: string; slug: string } | null;
+  count: number;
+}
 
-// ── Popular chips — iconic chassis codes / model names ────────────────────────
+// ── Slug derivation — mirrors catalog_populate's translate + regexp SQL ───────
+
+const ACCENT_MAP: Record<string, string> = {
+  é:'e', è:'e', ê:'e', ë:'e',
+  à:'a', â:'a', ä:'a',
+  î:'i', ï:'i',
+  ô:'o', ö:'o',
+  ù:'u', û:'u', ü:'u',
+  ç:'c',
+};
+
+function normSlug(s: string): string {
+  return s
+    .replace(/[éèêëàâäîïôöùûüç]/g, (c) => ACCENT_MAP[c] ?? c)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function modelPageSlug(make: string, model: string): string {
+  return `${normSlug(make)}-${normSlug(model)}`;
+}
+
+// ── Popular search chips ──────────────────────────────────────────────────────
 
 const POPULAR_CHIPS = [
   { label: "E30",          q: "E30"          },
@@ -22,22 +50,10 @@ const POPULAR_CHIPS = [
   { label: "911",          q: "Porsche 911"  },
   { label: "Land Cruiser", q: "Land Cruiser" },
   { label: "S2000",        q: "S2000"        },
-  { label: "BRZ / 86",     q: "BRZ"         },
-  { label: "Evo",          q: "Lancer Evo"  },
-  { label: "STI",          q: "Impreza STI" },
+  { label: "BRZ / 86",    q: "BRZ"          },
+  { label: "Evo",          q: "Lancer Evo"   },
+  { label: "STI",          q: "Impreza STI"  },
 ] as const;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function groupByMake(models: CarModel[]): [string, CarModel[]][] {
-  const map = new Map<string, CarModel[]>();
-  for (const m of models) {
-    const arr = map.get(m.make);
-    if (arr) arr.push(m);
-    else map.set(m.make, [m]);
-  }
-  return [...map.entries()];
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -61,25 +77,57 @@ function SectionHeading({
   );
 }
 
+// Catalog card for search results — no tag buttons, links to model page
+function CatalogCard({ model }: { model: CarModel }) {
+  const showChassis =
+    model.chassis_code && model.chassis_code !== model.generation;
+  const meta = [
+    showChassis ? model.chassis_code : null,
+    yearLabel(model),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <Link
+      href={`/model/${modelPageSlug(model.make, model.model)}`}
+      className="block group"
+    >
+      <div className="bg-white rounded-card border border-ink/8 overflow-hidden transition-colors group-hover:border-racing-green/25">
+        <div className="h-[3px] bg-racing-green/10 group-hover:bg-racing-green/40 transition-colors" />
+        <div className="p-3.5 space-y-1.5">
+          <p className="text-[0.52rem] uppercase tracking-[0.2em] font-bold text-hint leading-none">
+            {model.make}
+          </p>
+          <h3 className="font-display font-bold text-base leading-tight text-ink group-hover:text-racing-green transition-colors">
+            {model.model}
+            {model.generation && (
+              <span className="text-ink/45"> {model.generation}</span>
+            )}
+          </h3>
+          {meta && (
+            <p className="text-[0.52rem] uppercase tracking-[0.14em] text-hint leading-none">
+              {meta}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function ExploreSearch({
-  initialTags,
-  allModels,
+  makes,
+  featuredModels,
 }: {
-  initialTags: InitialTag[];
-  allModels: CarModel[];
+  makes: Make[];
+  featuredModels: FeaturedModel[];
 }) {
-  const [tagSet, setTagSet] = useState<Set<string>>(
-    () => new Set(initialTags.map((t) => `${t.model_id}:${t.tag_type}`))
-  );
-  const [query, setQuery]               = useState("");
+  const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<CarModel[]>([]);
-  const [pending, setPending]           = useState<string | null>(null);
-  const [browseOpen, setBrowseOpen]     = useState(false);
-  const [browseSelected, setBrowseSelected] = useState<CarModel | null>(null);
 
-  // Debounced search
   const search = useCallback(
     debounce(async (q: string) => {
       if (q.length < 2) { setSearchResults([]); return; }
@@ -93,55 +141,12 @@ export function ExploreSearch({
 
   useEffect(() => { search(query); }, [query, search]);
 
-  // Optimistic tag toggle
-  async function handleToggle(modelId: string, tagType: TagType) {
-    const key = `${modelId}:${tagType}`;
-    if (pending) return;
-    const wasTagged = tagSet.has(key);
-    setTagSet((prev) => {
-      const next = new Set(prev);
-      wasTagged ? next.delete(key) : next.add(key);
-      return next;
-    });
-    setPending(key);
-    try {
-      const result = await toggleModelTag(modelId, tagType);
-      if (result.error) {
-        setTagSet((prev) => {
-          const next = new Set(prev);
-          wasTagged ? next.add(key) : next.delete(key);
-          return next;
-        });
-        toast.error("Couldn't save — please try again");
-      } else {
-        const label = tagType === "driven" ? "Driven" : "Wishlist";
-        toast.info(wasTagged ? `Removed from ${label}` : `Added to ${label}`);
-      }
-    } finally {
-      setPending(null);
-    }
-  }
-
-  // Derived
   const isSearching = query.length >= 2;
-
-  const taggedModelIds = useMemo(
-    () => new Set([...tagSet].map((k) => k.split(":")[0])),
-    [tagSet]
-  );
-
-  const taggedModels = useMemo(
-    () => allModels.filter((m) => taggedModelIds.has(m.id)),
-    [allModels, taggedModelIds]
-  );
-
-  const modelsByMake = useMemo(() => groupByMake(allModels), [allModels]);
 
   return (
     <div>
-      {/* ── Search + chips ─────────────────────────────────────────────────── */}
+      {/* ── Search bar + chips ─────────────────────────────────────────────── */}
       <div className="px-5 space-y-4">
-        {/* Search input */}
         <div className="relative">
           <Search
             size={15}
@@ -194,23 +199,17 @@ export function ExploreSearch({
         </div>
       </div>
 
-      {/* ── Content ────────────────────────────────────────────────────────── */}
+      {/* ── Content ───────────────────────────────────────────────────────── */}
       <div className="px-5 mt-7">
         {isSearching ? (
-          /* ── Search results ── */
+          /* ── Search results ─────────────────────────────────────────────── */
           <section>
             {searchResults.length > 0 ? (
               <>
                 <SectionHeading count={searchResults.length}>Results</SectionHeading>
                 <div className="grid grid-cols-2 gap-3">
                   {searchResults.map((m) => (
-                    <ModelCard
-                      key={m.id}
-                      model={m}
-                      tagSet={tagSet}
-                      pending={pending}
-                      onToggle={handleToggle}
-                    />
+                    <CatalogCard key={m.id} model={m} />
                   ))}
                 </div>
               </>
@@ -223,80 +222,52 @@ export function ExploreSearch({
           </section>
         ) : (
           <>
-            {/* ── Your tags ── */}
-            {taggedModels.length > 0 && (
+            {/* ── Featured models ──────────────────────────────────────── */}
+            {featuredModels.length > 0 && (
               <section className="mb-9">
-                <SectionHeading count={taggedModels.length}>Your tags</SectionHeading>
+                <SectionHeading>Most registered</SectionHeading>
                 <div className="grid grid-cols-2 gap-3">
-                  {taggedModels.map((m) => (
-                    <ModelCard
-                      key={m.id}
-                      model={m}
-                      tagSet={tagSet}
-                      pending={pending}
-                      onToggle={handleToggle}
-                    />
+                  {featuredModels.map((model) => (
+                    <Link
+                      key={model.id}
+                      href={`/model/${model.slug}`}
+                      className="block group"
+                    >
+                      <div className="bg-white border border-ink/8 rounded-card p-4 group-hover:border-racing-green/25 transition-colors h-full">
+                        <p className="text-[0.5rem] uppercase tracking-[0.2em] text-hint mb-0.5 leading-none">
+                          {model.make?.name}
+                        </p>
+                        <h3 className="font-display font-bold text-base leading-tight text-ink group-hover:text-racing-green transition-colors">
+                          {model.name}
+                        </h3>
+                        <p className="text-[0.52rem] uppercase tracking-[0.12em] text-hint mt-2 leading-none">
+                          {model.count} {model.count === 1 ? "car" : "cars"}
+                        </p>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* ── Browse by make (collapsible) ── */}
-            <div className="mb-9">
-              <button
-                type="button"
-                onClick={() => setBrowseOpen((v) => !v)}
-                className="flex items-center gap-2 text-[0.58rem] uppercase tracking-[0.2em] font-bold text-hint hover:text-ink-muted transition-colors"
-              >
-                Browse by make
-                <ChevronDown
-                  size={12}
-                  className={`transition-transform duration-200 ${browseOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {browseOpen && (
-                <div className="mt-4 space-y-4">
-                  <BrowsePicker
-                    onSelect={(m) => setBrowseSelected(m)}
-                    disabled={false}
-                  />
-                  {browseSelected && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <ModelCard
-                        model={browseSelected}
-                        tagSet={tagSet}
-                        pending={pending}
-                        onToggle={handleToggle}
-                      />
+            {/* ── Brands ───────────────────────────────────────────────── */}
+            <section className="mb-9">
+              <SectionHeading count={makes.length}>Brands</SectionHeading>
+              <div className="grid grid-cols-3 gap-2">
+                {makes.map((make) => (
+                  <Link
+                    key={make.id}
+                    href={`/make/${make.slug}`}
+                    className="block group"
+                  >
+                    <div className="bg-white border border-ink/8 rounded-xl px-2.5 py-3 group-hover:border-racing-green/30 transition-colors text-center">
+                      <p className="font-medium text-xs text-ink group-hover:text-racing-green transition-colors leading-tight">
+                        {make.name}
+                      </p>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* ── Full catalog grid ── */}
-            <section>
-              <SectionHeading count={allModels.length}>Catalog</SectionHeading>
-
-              {modelsByMake.map(([make, models]) => (
-                <div key={make} className="mb-7">
-                  <p className="text-[0.55rem] uppercase tracking-[0.18em] font-bold text-hint mb-3">
-                    {make}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {models.map((m) => (
-                      <ModelCard
-                        key={m.id}
-                        model={m}
-                        tagSet={tagSet}
-                        pending={pending}
-                        onToggle={handleToggle}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </section>
           </>
         )}
