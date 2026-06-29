@@ -13,6 +13,7 @@ import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
+import { useFormGuard } from "@/lib/hooks/useFormGuard";
 import { ColorPicker } from "@/components/ColorPicker";
 import { debounce } from "@/lib/utils/debounce";
 import {
@@ -189,6 +190,8 @@ export function AddCarForm({
   const [state, action, pending] = useActionState<CarState, FormData>(createCar, null);
   const router = useRouter();
   const [navigating, setNavigating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  useFormGuard(isDirty);
 
   useEffect(() => {
     if (state && "slug" in state) {
@@ -264,19 +267,20 @@ export function AddCarForm({
   // Cascade resolves: generation known, year_start stored as default, input left blank
   const handleCascadeResolve = useCallback((model: CarModel, year: string) => {
     setSelectedModel(model);
-    setFinalYear(year);    // year_start — used as stored year if user doesn't specify
-    setYearInput("");      // leave blank; placeholder shows year_start
+    setFinalYear(year);
+    setYearInput("");
     setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
+    setIsDirty(true);
   }, []);
 
-  // Search resolves: generation fully known, default to year_start
   function handleSearchSelect(model: CarModel) {
     setSelectedModel(model);
-    setFinalYear(String(model.year_start));  // default; user can optionally narrow
+    setFinalYear(String(model.year_start));
     setYearInput("");
     setSelectedEngine(model.engines.length === 1 ? model.engines[0] : "");
     setSearchQuery("");
     setSearchResults([]);
+    setIsDirty(true);
   }
 
   function handleClear() {
@@ -287,6 +291,7 @@ export function AddCarForm({
     setCascadeKey((k) => k + 1);
     setSearchQuery("");
     setSearchResults([]);
+    setIsDirty(true);
   }
 
   function handleYearSelect(val: string) {
@@ -317,6 +322,7 @@ export function AddCarForm({
       }
     }
     setPhotos((prev) => [...prev, ...uploaded]);
+    if (uploaded.length > 0) setIsDirty(true);
     if (failed > 0) {
       setUploadError(
         failed === files.length
@@ -329,10 +335,11 @@ export function AddCarForm({
 
   function removePhoto(path: string) {
     setPhotos((prev) => prev.filter((p) => p.path !== path));
+    setIsDirty(true);
   }
 
   return (
-    <form action={action} className="space-y-8 pb-24">
+    <form action={action} className="space-y-8 pb-24" onChange={() => setIsDirty(true)}>
       {/* ── Hidden fields ── */}
       <input type="hidden" name="model_id" value={selectedModel?.id ?? ""} />
       <input type="hidden" name="display_make" value={selectedModel?.make ?? ""} />
@@ -534,7 +541,7 @@ export function AddCarForm({
             {/* Manual fallback */}
             <button
               type="button"
-              onClick={() => { setManualMode(true); handleClear(); }}
+              onClick={() => { setManualMode(true); handleClear(); setIsDirty(true); }}
               className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
             >
               Can&apos;t find it? Add it manually
@@ -644,7 +651,7 @@ export function AddCarForm({
 
           <div>
             <label className="text-xs text-ink/50 mb-2 block">Color</label>
-            <ColorPicker value={colorBase} onChange={setColorBase} />
+            <ColorPicker value={colorBase} onChange={(v) => { setColorBase(v); setIsDirty(true); }} />
             <input type="hidden" name="color_base" value={colorBase ?? ""} />
           </div>
 
@@ -680,7 +687,7 @@ export function AddCarForm({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setIsPrivate(false)}
+                onClick={() => { setIsPrivate(false); setIsDirty(true); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   !isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
@@ -689,7 +696,7 @@ export function AddCarForm({
               </button>
               <button
                 type="button"
-                onClick={() => setIsPrivate(true)}
+                onClick={() => { setIsPrivate(true); setIsDirty(true); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
@@ -759,7 +766,7 @@ export function AddCarForm({
             </div>
             <button
               type="button"
-              onClick={() => setPurchasePricePublic((v) => !v)}
+              onClick={() => { setPurchasePricePublic((v) => !v); setIsDirty(true); }}
               className={`flex items-center gap-1.5 text-xs mt-1.5 transition-colors ${
                 purchasePricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
               }`}
@@ -789,7 +796,7 @@ export function AddCarForm({
                   <button
                     key={u}
                     type="button"
-                    onClick={() => setPurchaseMileageUnit(u)}
+                    onClick={() => { setPurchaseMileageUnit(u); setIsDirty(true); }}
                     className={`px-3 py-2 transition-colors ${
                       purchaseMileageUnit === u
                         ? "bg-ink text-paper"

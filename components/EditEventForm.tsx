@@ -2,12 +2,13 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Hammer, Wrench } from "lucide-react";
+import { X, Hammer, Wrench, ArrowLeft } from "lucide-react";
 import { updateEvent, EventState } from "@/lib/actions/event";
 import { CURRENCIES } from "@/lib/car-options";
 import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
+import { useFormGuard, confirmDiscard } from "@/lib/hooks/useFormGuard";
 
 interface UploadedPhoto {
   path: string;
@@ -35,6 +36,9 @@ export function EditEventForm({
   userId,
   preferredUnit = "km",
   supabaseUrl,
+  backHref,
+  pageTitle,
+  pageSubtitle,
 }: {
   event: {
     id: string;
@@ -53,10 +57,15 @@ export function EditEventForm({
   userId: string;
   preferredUnit?: "km" | "mi";
   supabaseUrl: string;
+  backHref: string;
+  pageTitle: string;
+  pageSubtitle?: string;
 }) {
   const [state, action, pending] = useActionState<EventState, FormData>(updateEvent, null);
   const router = useRouter();
   const [navigating, setNavigating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  useFormGuard(isDirty);
   const [type, setType] = useState<EventType>((event.type as EventType) ?? "build");
   const [mileageUnit, setMileageUnit] = useState<"km" | "mi">(
     (event.mileage_unit as "km" | "mi") ?? preferredUnit
@@ -91,10 +100,12 @@ export function EditEventForm({
   function removeExistingPhoto(id: string) {
     setExistingPhotos((prev) => prev.filter((p) => p.id !== id));
     setRemovedPhotoIds((prev) => [...prev, id]);
+    setIsDirty(true);
   }
 
   function removeNewPhoto(path: string) {
     setNewPhotos((prev) => prev.filter((p) => p.path !== path));
+    setIsDirty(true);
   }
 
   async function handlePhotos(files: FileList | null) {
@@ -125,6 +136,7 @@ export function EditEventForm({
     }
 
     setNewPhotos((prev) => [...prev, ...uploaded]);
+    if (uploaded.length > 0) setIsDirty(true);
     if (failed > 0) {
       setUploadError(
         failed === files.length
@@ -138,7 +150,23 @@ export function EditEventForm({
   const allPhotoCount = existingPhotos.length + newPhotos.length;
 
   return (
-    <form action={action} className="space-y-6 pb-24">
+    <div className="space-y-6 pb-24">
+    {/* ── Header with guarded back button ── */}
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={() => { if (confirmDiscard(isDirty)) router.push(backHref); }}
+        className="text-ink/40 hover:text-ink transition-colors"
+      >
+        <ArrowLeft size={20} />
+      </button>
+      <div>
+        <h1 className="font-display font-bold text-xl">{pageTitle}</h1>
+        {pageSubtitle && <p className="text-ink/40 text-xs">{pageSubtitle}</p>}
+      </div>
+    </div>
+
+    <form action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
       <input type="hidden" name="event_id" value={event.id} />
       <input type="hidden" name="car_slug" value={carSlug} />
       <input type="hidden" name="type" value={type} />
@@ -153,7 +181,7 @@ export function EditEventForm({
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => setType("build")}
+            onClick={() => { setType("build"); setIsDirty(true); }}
             className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
               type === "build"
                 ? "border-racing-green bg-racing-green/5 text-racing-green"
@@ -166,7 +194,7 @@ export function EditEventForm({
           </button>
           <button
             type="button"
-            onClick={() => setType("fix")}
+            onClick={() => { setType("fix"); setIsDirty(true); }}
             className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
               type === "fix"
                 ? "border-ink bg-ink/5 text-ink"
@@ -259,7 +287,7 @@ export function EditEventForm({
               <button
                 key={u}
                 type="button"
-                onClick={() => setMileageUnit(u)}
+                onClick={() => { setMileageUnit(u); setIsDirty(true); }}
                 className={`px-3 py-3 transition-colors ${
                   mileageUnit === u ? "bg-ink text-paper" : "bg-card text-ink/50 hover:bg-ink/10"
                 }`}
@@ -377,5 +405,6 @@ export function EditEventForm({
         </button>
       </div>
     </form>
+    </div>
   );
 }

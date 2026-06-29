@@ -211,13 +211,15 @@ export default async function CarPage({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
-  // Hero carousel: all non-event photos ordered by position (cover is position 0)
-  const heroPhotos: HeroPhoto[] = (allPhotos ?? [])
-    .filter((p) => !p.event_id)
-    .map((p) => ({
-      id: p.id,
-      url: `${supabaseUrl}/storage/v1/object/public/car-photos/${p.storage_path}`,
-    }));
+  // Hero carousel: non-event photos with cover first, rest in position order
+  const nonEventPhotos = (allPhotos ?? []).filter((p) => !p.event_id);
+  const heroPhotos: HeroPhoto[] = [
+    ...nonEventPhotos.filter((p) => p.storage_path === car.cover_photo_path),
+    ...nonEventPhotos.filter((p) => p.storage_path !== car.cover_photo_path),
+  ].map((p) => ({
+    id: p.id,
+    url: `${supabaseUrl}/storage/v1/object/public/car-photos/${p.storage_path}`,
+  }));
 
   // Metadata line in hero: engine · transmission · color
   const heroSpecs = [car.engine, car.transmission, car.color].filter(Boolean);

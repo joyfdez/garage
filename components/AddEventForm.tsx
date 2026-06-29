@@ -2,13 +2,14 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Hammer, Wrench, Tag, Eye, EyeOff, DollarSign } from "lucide-react";
+import { X, Hammer, Wrench, Tag, Eye, EyeOff, DollarSign, ArrowLeft } from "lucide-react";
 import { createEvent, EventState } from "@/lib/actions/event";
 import { markAsSold, CarState } from "@/lib/actions/car";
 import { CURRENCIES } from "@/lib/car-options";
 import { toast } from "@/lib/toast";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
+import { useFormGuard, confirmDiscard } from "@/lib/hooks/useFormGuard";
 
 interface UploadedPhoto {
   path: string;
@@ -32,6 +33,9 @@ export function AddEventForm({
   purchaseCurrency = "EUR",
   initialType,
   isSold = false,
+  backHref,
+  pageTitle,
+  pageSubtitle,
 }: {
   carSlug: string;
   carId: string;
@@ -41,11 +45,16 @@ export function AddEventForm({
   purchaseCurrency?: string;
   initialType?: EventType;
   isSold?: boolean;
+  backHref: string;
+  pageTitle: string;
+  pageSubtitle?: string;
 }) {
   const [eventState, eventAction, eventPending] = useActionState<EventState, FormData>(createEvent, null);
   const [soldState, soldAction, soldPending] = useActionState<CarState, FormData>(markAsSold, null);
   const router = useRouter();
   const [navigating, setNavigating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  useFormGuard(isDirty);
   const [type, setType] = useState<EventType>(initialType ?? "build");
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [salePhotos, setSalePhotos] = useState<UploadedPhoto[]>([]);
@@ -125,6 +134,7 @@ export function AddEventForm({
     } else {
       setPhotos((prev) => [...prev, ...uploaded]);
     }
+    if (uploaded.length > 0) setIsDirty(true);
     if (failed > 0) {
       setUploadError(
         failed === files.length
@@ -137,6 +147,7 @@ export function AddEventForm({
 
   function removePhoto(path: string) {
     setPhotos((prev) => prev.filter((p) => p.path !== path));
+    setIsDirty(true);
   }
 
   const isSoldType = type === "sold";
@@ -145,7 +156,23 @@ export function AddEventForm({
   const today = new Date().toISOString().split("T")[0];
 
   return (
-    <form action={currentAction} className="space-y-6 pb-24">
+    <div className="space-y-6 pb-24">
+    {/* ── Header with guarded back button ── */}
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={() => { if (confirmDiscard(isDirty)) router.push(backHref); }}
+        className="text-ink/40 hover:text-ink transition-colors"
+      >
+        <ArrowLeft size={20} />
+      </button>
+      <div>
+        <h1 className="font-display font-bold text-xl">{pageTitle}</h1>
+        {pageSubtitle && <p className="text-ink/40 text-xs">{pageSubtitle}</p>}
+      </div>
+    </div>
+
+    <form action={currentAction} className="space-y-6" onChange={() => setIsDirty(true)}>
       {/* Hidden fields — event flow */}
       {!isSoldType && (
         <>
@@ -179,7 +206,7 @@ export function AddEventForm({
         <div className={`grid gap-2 ${isSold ? "grid-cols-2" : "grid-cols-3"}`}>
           <button
             type="button"
-            onClick={() => setType("build")}
+            onClick={() => { setType("build"); setIsDirty(true); }}
             className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
               type === "build"
                 ? "border-racing-green bg-racing-green/5 text-racing-green"
@@ -194,7 +221,7 @@ export function AddEventForm({
           </button>
           <button
             type="button"
-            onClick={() => setType("fix")}
+            onClick={() => { setType("fix"); setIsDirty(true); }}
             className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
               type === "fix"
                 ? "border-ink bg-ink/5 text-ink"
@@ -210,7 +237,7 @@ export function AddEventForm({
           {!isSold && (
             <button
               type="button"
-              onClick={() => setType("sold")}
+              onClick={() => { setType("sold"); setIsDirty(true); }}
               className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-colors ${
                 type === "sold"
                   ? "border-[#FF5A1F] bg-[#FF5A1F]/5 text-[#FF5A1F]"
@@ -310,7 +337,7 @@ export function AddEventForm({
                   <button
                     key={u}
                     type="button"
-                    onClick={() => setMileageUnit(u)}
+                    onClick={() => { setMileageUnit(u); setIsDirty(true); }}
                     className={`px-3 py-3 transition-colors ${
                       mileageUnit === u
                         ? "bg-ink text-paper"
@@ -448,7 +475,7 @@ export function AddEventForm({
                   <button
                     key={u}
                     type="button"
-                    onClick={() => setSaleMileageUnit(u)}
+                    onClick={() => { setSaleMileageUnit(u); setIsDirty(true); }}
                     className={`px-3 py-3 transition-colors ${
                       saleMileageUnit === u
                         ? "bg-ink text-paper"
@@ -487,7 +514,7 @@ export function AddEventForm({
             </div>
             <button
               type="button"
-              onClick={() => setPricePublic((v) => !v)}
+              onClick={() => { setPricePublic((v) => !v); setIsDirty(true); }}
               className={`flex items-center gap-1.5 text-xs transition-colors ${
                 pricePublic ? "text-racing-green" : "text-ink/40 hover:text-ink/60"
               }`}
@@ -588,5 +615,6 @@ export function AddEventForm({
         </button>
       </div>
     </form>
+    </div>
   );
 }

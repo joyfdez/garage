@@ -1,6 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EditEventForm } from "@/components/EditEventForm";
 
@@ -64,19 +62,6 @@ export default async function EditEventPage({
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/car/${slug}/events/${id}`}
-          className="text-ink/40 hover:text-ink transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="font-display font-bold text-xl">Edit event</h1>
-          <p className="text-ink/40 text-xs">{car.year} {make} {model}</p>
-        </div>
-      </div>
-
       <EditEventForm
         event={{
           id: event.id,
@@ -95,6 +80,9 @@ export default async function EditEventPage({
         userId={user.id}
         preferredUnit={preferredUnit}
         supabaseUrl={supabaseUrl}
+        backHref={`/car/${slug}/events/${id}`}
+        pageTitle="Edit event"
+        pageSubtitle={`${car.year} ${make} ${model}`}
       />
     </div>
   );

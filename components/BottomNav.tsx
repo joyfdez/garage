@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { isFormDirty } from "@/lib/hooks/useFormGuard";
 import { PlusCircle, Compass, User } from "lucide-react";
 
 const nav = [
@@ -31,6 +32,7 @@ function isNavActive(href: string, pathname: string): boolean {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   if (
     pathname === "/" ||
@@ -55,6 +57,14 @@ export function BottomNav() {
                 className={`flex flex-col items-center justify-center h-full gap-0.5 text-2xs font-medium transition-colors ${
                   active ? "text-green-bright" : "text-ink/35"
                 }`}
+                onClick={(e) => {
+                  if (!active && isFormDirty()) {
+                    e.preventDefault();
+                    if (confirm("Discard unsaved changes? Your changes will be lost.")) {
+                      router.push(href);
+                    }
+                  }
+                }}
               >
                 <Icon
                   size={22}

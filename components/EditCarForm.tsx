@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar, Search, Check, ChevronRight } from "lucide-react";
+import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar, Search, Check, ChevronRight, ArrowLeft } from "lucide-react";
 import { ColorPicker } from "@/components/ColorPicker";
 import { toast } from "@/lib/toast";
 import {
@@ -17,6 +17,7 @@ import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import { type CarModel, yearLabel } from "@/components/BrowsePicker";
 import { debounce } from "@/lib/utils/debounce";
+import { useFormGuard, confirmDiscard } from "@/lib/hooks/useFormGuard";
 import {
   FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS, TRANSMISSION_OPTIONS,
   CURRENCIES, YEAR_OPTIONS,
@@ -213,15 +214,19 @@ export function EditCarForm({
   photos: initialPhotos,
   supabaseUrl,
   userId,
+  backHref,
 }: {
   car: CarForEdit;
   photos: PhotoItem[];
   supabaseUrl: string;
   userId: string;
+  backHref: string;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<CarState, FormData>(updateCar, null);
   const [navigating, setNavigating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  useFormGuard(isDirty);
   const [isPrivate, setIsPrivate] = useState(car.visibility === "private");
   const [purchasePricePublic, setPurchasePricePublic] = useState(car.purchasePricePublic ?? false);
   const [purchaseMileageUnit, setPurchaseMileageUnit] = useState<"km" | "mi">(
@@ -274,12 +279,14 @@ export function EditCarForm({
 
   const handleModelResolve = useCallback((model: CarModel, _year: string) => {
     setSelectedModel(model);
+    setIsDirty(true);
   }, []);
 
   function handleSearchSelect(model: CarModel) {
     setSelectedModel(model);
     setSearchQuery("");
     setSearchResults([]);
+    setIsDirty(true);
   }
 
   function handleClearModel() {
@@ -287,6 +294,7 @@ export function EditCarForm({
     setCascadeKey((k) => k + 1);
     setSearchQuery("");
     setSearchResults([]);
+    setIsDirty(true);
   }
 
   function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
@@ -411,8 +419,20 @@ export function EditCarForm({
 
   return (
     <div className="space-y-10 pb-24">
+      {/* ── Header with guarded back button ── */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => { if (confirmDiscard(isDirty)) router.push(backHref); }}
+          className="text-ink/40 hover:text-ink transition-colors"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="font-display font-bold text-xl">Edit car</h1>
+      </div>
+
       {/* ── Details form ── */}
-      <form action={action} className="space-y-6">
+      <form action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
         <input type="hidden" name="car_id" value={car.id} />
 
         <section className="space-y-4">
@@ -509,7 +529,7 @@ export function EditCarForm({
 
                 <button
                   type="button"
-                  onClick={() => setManualMode(true)}
+                  onClick={() => { setManualMode(true); setIsDirty(true); }}
                   className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
                 >
                   Can&apos;t find it? Add it manually
@@ -550,7 +570,7 @@ export function EditCarForm({
                 </div>
                 <button
                   type="button"
-                  onClick={() => { setManualMode(false); setCascadeKey((k) => k + 1); }}
+                  onClick={() => { setManualMode(false); setCascadeKey((k) => k + 1); setIsDirty(true); }}
                   className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
                 >
                   Search catalog instead
@@ -643,7 +663,7 @@ export function EditCarForm({
 
           <div>
             <label className="text-xs text-ink/50 mb-2 block">Color</label>
-            <ColorPicker value={colorBase} onChange={setColorBase} />
+            <ColorPicker value={colorBase} onChange={(v) => { setColorBase(v); setIsDirty(true); }} />
             <input type="hidden" name="color_base" value={colorBase ?? ""} />
           </div>
 
@@ -696,7 +716,7 @@ export function EditCarForm({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setIsPrivate(false)}
+                onClick={() => { setIsPrivate(false); setIsDirty(true); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   !isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
@@ -705,7 +725,7 @@ export function EditCarForm({
               </button>
               <button
                 type="button"
-                onClick={() => setIsPrivate(true)}
+                onClick={() => { setIsPrivate(true); setIsDirty(true); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   isPrivate ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                 }`}
@@ -772,7 +792,7 @@ export function EditCarForm({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setPurchasePricePublic(true)}
+                  onClick={() => { setPurchasePricePublic(true); setIsDirty(true); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                     purchasePricePublic ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                   }`}
@@ -781,7 +801,7 @@ export function EditCarForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPurchasePricePublic(false)}
+                  onClick={() => { setPurchasePricePublic(false); setIsDirty(true); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                     !purchasePricePublic ? "bg-ink text-paper border-ink" : "bg-card text-ink/50 border-card"
                   }`}
@@ -811,7 +831,7 @@ export function EditCarForm({
                     <button
                       key={u}
                       type="button"
-                      onClick={() => setPurchaseMileageUnit(u)}
+                      onClick={() => { setPurchaseMileageUnit(u); setIsDirty(true); }}
                       className={`px-3 py-2 transition-colors ${
                         purchaseMileageUnit === u
                           ? "bg-ink text-paper"

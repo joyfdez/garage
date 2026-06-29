@@ -1,6 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AddEventForm } from "@/components/AddEventForm";
 
@@ -64,21 +62,6 @@ export default async function AddEventPage({
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/car/${slug}`}
-          className="text-ink/40 hover:text-ink transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="font-display font-bold text-xl">{pageTitle}</h1>
-          <p className="text-ink/40 text-xs">
-            {car.year} {make} {model}
-          </p>
-        </div>
-      </div>
-
       <AddEventForm
         carSlug={slug}
         carId={car.id}
@@ -88,6 +71,9 @@ export default async function AddEventPage({
         purchaseCurrency={purchaseCurrency}
         initialType={initialType}
         isSold={isSold}
+        backHref={`/car/${slug}`}
+        pageTitle={pageTitle}
+        pageSubtitle={`${car.year} ${make} ${model}`}
       />
     </div>
   );

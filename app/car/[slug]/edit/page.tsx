@@ -1,6 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EditCarForm, CarForEdit, PhotoItem } from "@/components/EditCarForm";
 import type { CarModel } from "@/components/BrowsePicker";
@@ -120,21 +118,12 @@ export default async function EditCarPage({
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/car/${slug}`}
-          className="text-ink/40 hover:text-ink transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <h1 className="font-display font-bold text-xl">Edit car</h1>
-      </div>
-
       <EditCarForm
         car={carForEdit}
         photos={photos}
         supabaseUrl={supabaseUrl}
         userId={user.id}
+        backHref={`/car/${slug}`}
       />
     </div>
   );
