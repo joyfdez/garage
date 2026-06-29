@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EditCarForm, CarForEdit, PhotoItem } from "@/components/EditCarForm";
+import type { CarModel } from "@/components/BrowsePicker";
 
 export default async function EditCarPage({
   params,
@@ -22,7 +23,7 @@ export default async function EditCarPage({
       engine, transmission, color, color_base, location, current_owner_id, model_id,
       fuel, drivetrain, horsepower, body_type,
       custom_make, custom_model, custom_generation,
-      model:car_models(make, model, generation, engines)
+      model:car_models(id, make, model, generation, engines, chassis_code, year_start, year_end, slug)
     `)
     .eq("slug", slug)
     .single();
@@ -47,11 +48,33 @@ export default async function EditCarPage({
   const activeOwnership = ownershipResult.data;
   const preferredUnit = (profileResult.data?.mileage_unit === "mi" ? "mi" : "km") as "km" | "mi";
 
-  type ModelRow = { make: string; model: string; generation: string; engines: string[] };
+  type ModelRow = {
+    id: string;
+    make: string;
+    model: string;
+    generation: string;
+    engines: string[];
+    chassis_code: string | null;
+    year_start: number;
+    year_end: number | null;
+    slug: string;
+  };
   const rawModel = car.model as unknown;
   const m: ModelRow | null = Array.isArray(rawModel)
     ? (rawModel[0] ?? null)
     : (rawModel as ModelRow | null);
+
+  const catalogModel: CarModel | null = m ? {
+    id: m.id,
+    make: m.make,
+    model: m.model,
+    generation: m.generation,
+    engines: m.engines,
+    chassis_code: m.chassis_code,
+    year_start: m.year_start,
+    year_end: m.year_end,
+    slug: m.slug,
+  } : null;
 
   const carForEdit: CarForEdit = {
     id: car.id,
@@ -65,6 +88,7 @@ export default async function EditCarPage({
     visibility: car.visibility as "public" | "private",
     cover_photo_path: car.cover_photo_path,
     model_id: car.model_id,
+    catalogModel,
     engines: m?.engines ?? [],
     displayMake: m?.make ?? car.custom_make ?? "",
     displayModel: m?.model ?? car.custom_model ?? "",

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar } from "lucide-react";
+import { Globe, Lock, Star, X, Camera, ChevronDown, Calendar, Search, Check, ChevronRight } from "lucide-react";
 import { ColorPicker } from "@/components/ColorPicker";
 import { toast } from "@/lib/toast";
 import {
@@ -15,6 +15,8 @@ import {
 } from "@/lib/actions/car";
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
+import { type CarModel, yearLabel } from "@/components/BrowsePicker";
+import { debounce } from "@/lib/utils/debounce";
 import {
   FUEL_OPTIONS, DRIVETRAIN_OPTIONS, BODY_TYPE_OPTIONS, TRANSMISSION_OPTIONS,
   CURRENCIES, YEAR_OPTIONS,
@@ -39,6 +41,7 @@ export interface CarForEdit {
   custom_make: string | null;
   custom_model: string | null;
   custom_generation: string | null;
+  catalogModel?: CarModel | null;
   fuel: string | null;
   drivetrain: string | null;
   horsepower: number | null;
@@ -58,6 +61,147 @@ export interface CarForEdit {
 export interface PhotoItem {
   id: string;
   storage_path: string;
+}
+
+// ── Inline cascade picker (same as AddCarForm) ───────────────────────────────
+function CascadePicker({
+  onResolve,
+}: {
+  onResolve: (model: CarModel, year: string) => void;
+}) {
+  const [makes, setMakes]             = useState<string[]>([]);
+  const [cMake, setCMake]             = useState("");
+  const [cModels, setCModels]         = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [cModel, setCModel]           = useState("");
+  const [generations, setGens]        = useState<CarModel[] | null>(null);
+  const [fetching, setFetching]       = useState(false);
+  const [pickIdx, setPickIdx]         = useState(0);
+
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
+
+  useEffect(() => {
+    fetch("/api/car-models/makes").then((r) => r.json()).then(setMakes).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setCModel("");
+    setCModels([]);
+    setGens(null);
+    if (!cMake) { setLoadingModels(false); return; }
+    setLoadingModels(true);
+    fetch(`/api/car-models/models?make=${encodeURIComponent(cMake)}`)
+      .then((r) => r.json())
+      .then(setCModels)
+      .catch(() => {})
+      .finally(() => setLoadingModels(false));
+  }, [cMake]);
+
+  useEffect(() => {
+    setGens(null);
+    setPickIdx(0);
+    if (!cMake || !cModel) return;
+    setFetching(true);
+    fetch(
+      `/api/car-models/generations?make=${encodeURIComponent(cMake)}&model=${encodeURIComponent(cModel)}`
+    )
+      .then((r) => r.json())
+      .then((data: CarModel[]) => {
+        setGens(data);
+        if (data.length === 1) {
+          onResolveRef.current(data[0], String(data[0].year_start));
+        }
+      })
+      .catch(() => setGens([]))
+      .finally(() => setFetching(false));
+  }, [cMake, cModel]);
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="text-xs text-ink/50 mb-1 block">Make</label>
+        <div className="relative">
+          <select
+            value={cMake}
+            onChange={(e) => setCMake(e.target.value)}
+            className="input-field w-full appearance-none pr-8"
+          >
+            <option value="">Select make…</option>
+            {makes.map((mk) => <option key={mk} value={mk}>{mk}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+        </div>
+      </div>
+
+      {cMake && (
+        <div>
+          <label className="text-xs text-ink/50 mb-1 block">Model</label>
+          <div className="relative">
+            <select
+              value={cModel}
+              onChange={(e) => setCModel(e.target.value)}
+              disabled={loadingModels}
+              className="input-field w-full appearance-none pr-8 disabled:opacity-50"
+            >
+              {loadingModels ? (
+                <option value="">Loading models…</option>
+              ) : (
+                <>
+                  <option value="">Select model…</option>
+                  {cModels.map((mo) => <option key={mo} value={mo}>{mo}</option>)}
+                </>
+              )}
+            </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {cMake && cModel && (
+        <>
+          {fetching && <p className="text-xs text-ink/40">Loading generations…</p>}
+
+          {!fetching && generations !== null && generations.length === 0 && (
+            <p className="text-xs text-red-400">
+              {cMake} {cModel} isn&apos;t in the catalog. Use &ldquo;Add it manually&rdquo; below.
+            </p>
+          )}
+
+          {!fetching && generations !== null && generations.length > 1 && (
+            <div>
+              <p className="text-xs text-ink/50 mb-2">Pick your generation:</p>
+              <div className="space-y-1.5">
+                {generations.map((g, i) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setPickIdx(i);
+                      onResolveRef.current(g, String(g.year_start));
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-colors ${
+                      pickIdx === i
+                        ? "border-racing-green bg-racing-green/5 text-racing-green"
+                        : "border-card text-ink/60 hover:border-ink/20"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {g.generation}
+                      {g.chassis_code && g.chassis_code !== g.generation && (
+                        <span className="text-ink/40 font-normal ml-1.5">({g.chassis_code})</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-ink/40">{yearLabel(g)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 function photoUrl(supabaseUrl: string, path: string) {
@@ -93,6 +237,57 @@ export function EditCarForm({
   );
   const currencySymbol = CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
   const [colorBase, setColorBase] = useState<string | null>(car.color_base ?? null);
+
+  // Model picker state
+  const [selectedModel, setSelectedModel] = useState<CarModel | null>(car.catalogModel ?? null);
+  const [manualMode, setManualMode] = useState(!car.model_id);
+  const [cascadeKey, setCascadeKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<CarModel[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const doSearch = useCallback(
+    debounce(async (q: string) => {
+      if (q.length < 2) { setSearchResults([]); return; }
+      try {
+        const res = await fetch(`/api/car-models?q=${encodeURIComponent(q)}`);
+        if (res.ok) setSearchResults(await res.json());
+        else setSearchResults([]);
+      } catch {
+        setSearchResults([]);
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => { doSearch(searchQuery); }, [searchQuery, doSearch]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleModelResolve = useCallback((model: CarModel, _year: string) => {
+    setSelectedModel(model);
+  }, []);
+
+  function handleSearchSelect(model: CarModel) {
+    setSelectedModel(model);
+    setSearchQuery("");
+    setSearchResults([]);
+  }
+
+  function handleClearModel() {
+    setSelectedModel(null);
+    setCascadeKey((k) => k + 1);
+    setSearchQuery("");
+    setSearchResults([]);
+  }
 
   function parseDigits(val: string) { return val.replace(/[^0-9]/g, ""); }
   function formatInt(raw: string) {
@@ -223,47 +418,146 @@ export function EditCarForm({
         <section className="space-y-4">
           <h2 className="font-display font-bold text-lg">Car details</h2>
 
-          {/* Model — read-only for catalog cars, editable for custom */}
-          {car.model_id ? (
-            <div>
-              <label className="text-xs text-ink/50 mb-1 block">Model</label>
-              <p className="px-3 py-3 bg-card rounded-xl text-sm text-ink/60">
-                {car.displayMake} {car.displayModel}
-                {car.displayGeneration && (
-                  <span className="text-ink/40 ml-1">{car.displayGeneration}</span>
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
+          {/* Model — catalog picker, always editable */}
+          <div className="space-y-3">
+            <input type="hidden" name="model_id" value={selectedModel?.id ?? ""} />
+
+            {/* ── Confirmed: catalog model selected ── */}
+            {selectedModel && !manualMode && (
               <div>
-                <label className="text-xs text-ink/50 mb-1 block">Make *</label>
-                <input
-                  name="custom_make"
-                  required
-                  defaultValue={car.custom_make ?? ""}
-                  className="input-field w-full"
-                />
+                <label className="text-xs text-ink/50 mb-1 block">Model</label>
+                <div className="flex items-center justify-between bg-racing-green/8 border border-racing-green/20 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Check size={15} className="text-racing-green flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm leading-tight">
+                        {selectedModel.make} {selectedModel.model}{" "}
+                        <span className="text-ink/60">{selectedModel.generation}</span>
+                        {selectedModel.chassis_code && selectedModel.chassis_code !== selectedModel.generation && (
+                          <span className="text-ink/40 font-normal ml-1">({selectedModel.chassis_code})</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-ink/40">{yearLabel(selectedModel)}</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleClearModel}
+                    className="text-ink/30 hover:text-ink/60 ml-3 flex-shrink-0">
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-ink/50 mb-1 block">Model *</label>
-                <input
-                  name="custom_model"
-                  required
-                  defaultValue={car.custom_model ?? ""}
-                  className="input-field w-full"
-                />
+            )}
+
+            {/* ── Picking: search + cascade ── */}
+            {!selectedModel && !manualMode && (
+              <>
+                <div>
+                  <label className="text-xs text-ink/50 mb-2 block">Model</label>
+                  <div ref={searchRef} className="relative">
+                    <div className="relative">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Know your chassis? Type E30, S13, Miata…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-9 py-3 bg-card rounded-xl text-sm placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20"
+                        autoComplete="off"
+                      />
+                      {searchQuery && (
+                        <button type="button"
+                          onClick={() => { setSearchQuery(""); setSearchResults([]); }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60">
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    {searchResults.length > 0 && (
+                      <ul className="absolute z-20 mt-1 w-full bg-white border border-card rounded-xl shadow-lg overflow-hidden">
+                        {searchResults.map((m) => (
+                          <li key={m.id}>
+                            <button
+                              type="button"
+                              onMouseDown={() => handleSearchSelect(m)}
+                              className="w-full text-left px-4 py-3 hover:bg-paper text-sm flex items-center justify-between gap-3"
+                            >
+                              <span>
+                                <span className="font-medium">{m.make} {m.model} {m.generation}</span>
+                                {m.chassis_code && m.chassis_code !== m.generation && (
+                                  <span className="text-ink/40 ml-1">({m.chassis_code})</span>
+                                )}
+                              </span>
+                              <span className="text-ink/35 text-xs flex-shrink-0 flex items-center gap-1">
+                                {yearLabel(m)}
+                                <ChevronRight size={11} />
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-card" />
+                  <span className="text-xs text-ink/30">or select step by step</span>
+                  <div className="flex-1 h-px bg-card" />
+                </div>
+
+                <CascadePicker key={cascadeKey} onResolve={handleModelResolve} />
+
+                <button
+                  type="button"
+                  onClick={() => setManualMode(true)}
+                  className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
+                >
+                  Can&apos;t find it? Add it manually
+                </button>
+              </>
+            )}
+
+            {/* ── Manual: free-text entry ── */}
+            {manualMode && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-ink/50 mb-1 block">Make *</label>
+                    <input
+                      name="custom_make"
+                      required
+                      defaultValue={car.custom_make ?? ""}
+                      className="input-field w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink/50 mb-1 block">Model *</label>
+                    <input
+                      name="custom_model"
+                      required
+                      defaultValue={car.custom_model ?? ""}
+                      className="input-field w-full"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-ink/50 mb-1 block">Generation / trim</label>
+                  <input
+                    name="custom_generation"
+                    defaultValue={car.custom_generation ?? ""}
+                    className="input-field w-full"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setManualMode(false); setCascadeKey((k) => k + 1); }}
+                  className="text-sm text-ink/40 underline underline-offset-2 hover:text-ink/70"
+                >
+                  Search catalog instead
+                </button>
               </div>
-              <div className="col-span-2">
-                <label className="text-xs text-ink/50 mb-1 block">Generation / trim</label>
-                <input
-                  name="custom_generation"
-                  defaultValue={car.custom_generation ?? ""}
-                  className="input-field w-full"
-                />
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -205,10 +205,17 @@ export async function updateCar(
     color_base: (formData.get("color_base") as string)?.trim() || null,
   };
 
-  if (!existing.model_id) {
+  const newModelId = (formData.get("model_id") as string)?.trim() || null;
+  if (newModelId) {
+    updates.model_id = newModelId;
+    updates.custom_make = null;
+    updates.custom_model = null;
+    updates.custom_generation = null;
+  } else {
     const customMake = (formData.get("custom_make") as string)?.trim() || null;
     const customModel = (formData.get("custom_model") as string)?.trim() || null;
     if (!customMake || !customModel) return { error: "Make and model are required." };
+    updates.model_id = null;
     updates.custom_make = customMake;
     updates.custom_model = customModel;
     updates.custom_generation = (formData.get("custom_generation") as string)?.trim() || null;
@@ -216,6 +223,18 @@ export async function updateCar(
 
   const { error } = await supabase.from("cars").update(updates).eq("id", carId);
   if (error) return { error: "Failed to save changes. Please try again." };
+
+  // Revalidate the catalog model page when a new model link is established
+  if (newModelId && newModelId !== existing.model_id) {
+    const { data: modelData } = await supabase
+      .from("car_models")
+      .select("slug")
+      .eq("id", newModelId)
+      .single();
+    if (modelData?.slug) {
+      revalidatePath(`/model/${modelData.slug}`);
+    }
+  }
 
   // Also update ownership purchase fields if an ownership_id was submitted
   const ownershipId = (formData.get("ownership_id") as string)?.trim() || null;
