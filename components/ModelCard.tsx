@@ -1,3 +1,4 @@
+import { Route, Star } from "lucide-react";
 import { CarModel, yearLabel } from "@/components/BrowsePicker";
 import { TagType } from "@/lib/actions/modelTags";
 
@@ -74,24 +75,26 @@ export function ModelCard({ model, tagSet, pending, onToggle }: ModelCardProps) 
             type="button"
             onClick={() => onToggle(model.id, "driven")}
             disabled={!!pending}
-            className={`flex-1 text-[0.65rem] font-bold py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+            className={`flex-1 flex items-center justify-center gap-1 text-[0.65rem] font-bold py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
               isDriven
                 ? "bg-racing-green text-white"
                 : "border border-ink/10 text-hint hover:border-racing-green/35 hover:text-racing-green"
             }`}
           >
+            <Route size={10} />
             Driven
           </button>
           <button
             type="button"
             onClick={() => onToggle(model.id, "wishlist")}
             disabled={!!pending}
-            className={`flex-1 text-[0.65rem] font-bold py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+            className={`flex-1 flex items-center justify-center gap-1 text-[0.65rem] font-bold py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
               isWishlist
                 ? "bg-green-bright text-white"
                 : "border border-ink/10 text-hint hover:border-green-bright/40 hover:text-green-bright"
             }`}
           >
+            <Star size={10} />
             Wishlist
           </button>
         </div>

@@ -8,7 +8,7 @@ import { debounce } from "@/lib/utils/debounce";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Make { id: string; name: string; slug: string }
+interface Make { id: string; name: string; slug: string; logo_path: string | null }
 interface FeaturedModel {
   id: string;
   name: string;
@@ -254,19 +254,41 @@ export function ExploreSearch({
             <section className="mb-9">
               <SectionHeading count={makes.length}>Brands</SectionHeading>
               <div className="grid grid-cols-3 gap-2">
-                {makes.map((make) => (
-                  <Link
-                    key={make.id}
-                    href={`/make/${make.slug}`}
-                    className="block group"
-                  >
-                    <div className="bg-white border border-ink/8 rounded-xl px-2.5 py-3 group-hover:border-racing-green/30 transition-colors text-center">
-                      <p className="font-medium text-xs text-ink group-hover:text-racing-green transition-colors leading-tight">
-                        {make.name}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                {makes.map((make) => {
+                  const logoUrl = make.logo_path
+                    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/catalog/${make.logo_path}`
+                    : null;
+                  return (
+                    <Link
+                      key={make.id}
+                      href={`/make/${make.slug}`}
+                      className="block group"
+                    >
+                      <div className="bg-white border border-ink/8 rounded-xl px-2 py-3.5 group-hover:border-racing-green/30 transition-colors flex flex-col items-center gap-2">
+                        {/* Logo or placeholder */}
+                        <div className="h-8 flex items-center justify-center">
+                          {logoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              className="h-8 w-full object-contain"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <span className="text-[0.65rem] font-bold text-hint/60 uppercase tracking-wider">
+                              {make.name.slice(0, 3)}
+                            </span>
+                          )}
+                        </div>
+                        {/* Brand name */}
+                        <p className="text-[0.6rem] font-bold text-ink-muted group-hover:text-racing-green transition-colors text-center leading-tight">
+                          {make.name}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           </>

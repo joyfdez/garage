@@ -5,13 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import {
   ModelGenerations,
   type Generation,
-  type CommunityCar,
-  type ModelPhoto,
 } from "@/components/ModelGenerations";
+import { CatalogBreadcrumb } from "@/components/CatalogBreadcrumb";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type MakeRow = { name: string; slug: string };
+type MakeRow = { name: string; slug: string; logo_path: string | null };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,7 +39,7 @@ export async function generateMetadata({
 
   if (!model) return { title: "Model not found — Garage" };
 
-  const make = (model.make as unknown as MakeRow | null)?.name ?? "";
+  const make = (model.make as unknown as { name: string } | null)?.name ?? "";
   const title = `${make} ${model.name}`;
 
   return {
@@ -62,18 +61,16 @@ export default async function ModelPage({
 }) {
   const { slug } = await params;
 
-  // Authenticated client (sees: public cars + user's own private).
-  // Also used for user tags. Falls back to anon behaviour when logged out.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ── 1. Model + make (public catalog — anon client) ─────────────────────────
+  // ── 1. Model + make ────────────────────────────────────────────────────────
   const anon = anonSupabase();
   const { data: model } = await anon
     .from("models")
-    .select("id, name, slug, description, make:makes(name, slug)")
+    .select("id, name, slug, description, make:makes(name, slug, logo_path)")
     .eq("slug", slug)
     .single();
 
@@ -81,10 +78,10 @@ export default async function ModelPage({
 
   const make = model.make as unknown as MakeRow | null;
 
-  // ── 2. All generations for this model, ordered chronologically ─────────────
+  // ── 2. All generations for this model ─────────────────────────────────────
   const { data: rawGenerations } = await anon
     .from("car_models")
-    .select("id, generation, chassis_code, year_start, year_end, engines, slug, description, cover_photo_path")
+    .select("id, generation, chassis_code, year_start, year_end, engines, slug")
     .eq("model_ref_id", model.id)
     .order("year_start", { ascending: true });
 
@@ -98,121 +95,71 @@ export default async function ModelPage({
     year_end: g.year_end,
     engines: g.engines ?? [],
     slug: g.slug,
-    description: (g as { description?: string | null }).description ?? null,
-    cover_photo_path: (g as { cover_photo_path?: string | null }).cover_photo_path ?? null,
   }));
 
   const genIds = generations.map((g) => g.id);
 
-  // ── 3. Parallel data fetches ───────────────────────────────────────────────
-  const [{ data: userTagRows }, { data: publicCarRows }, { data: allCarRows }, { data: modelPhotoRows }] =
-    await Promise.all([
-      // User's driven/wishlist tags for these generations
-      user
-        ? supabase
-            .from("user_model_tags")
-            .select("model_id, tag_type")
-            .eq("user_id", user.id)
-            .in("model_id", genIds)
-        : { data: [] as { model_id: string; tag_type: string }[] },
+  // ── 3. User tags + aggregate car count ────────────────────────────────────
+  const [{ data: userTagRows }, { data: allCarRows }] = await Promise.all([
+    user
+      ? supabase
+          .from("user_model_tags")
+          .select("model_id, tag_type")
+          .eq("user_id", user.id)
+          .in("model_id", genIds)
+      : { data: [] as { model_id: string; tag_type: string }[] },
 
-      // Public community cars only — RLS + explicit filter: privacy is enforced at both layers
-      supabase
-        .from("cars")
-        .select(
-          "slug, year, nickname, cover_photo_path, model_id, owner:profiles!current_owner_id(username, display_name)"
-        )
-        .in("model_id", genIds)
-        .eq("visibility", "public")
-        .order("year", { ascending: true })
-        .limit(40),
+    genIds.length > 0
+      ? supabase.from("cars").select("id, model_id").in("model_id", genIds)
+      : { data: [] as { id: string; model_id: string }[] },
+  ]);
 
-      // Aggregate counts: public + user's own private (what RLS allows).
-      // Only id + model_id — no sensitive fields exposed.
-      supabase.from("cars").select("id, model_id").in("model_id", genIds),
-
-      // Catalog gallery photos for all generations — one query, grouped in memory below.
-      genIds.length > 0
-        ? anon
-            .from("model_photos")
-            .select("car_model_id, storage_path, position")
-            .in("car_model_id", genIds)
-            .order("position")
-        : { data: [] as { car_model_id: string; storage_path: string; position: number }[] },
-    ]);
-
-  // ── 4. Build lookup maps ───────────────────────────────────────────────────
-
-  // Per-generation total count (public + own private via RLS)
+  // ── 4. Build counts ────────────────────────────────────────────────────────
   const countByGenId: Record<string, number> = {};
+  let totalCount = 0;
   for (const car of allCarRows ?? []) {
     countByGenId[car.model_id] = (countByGenId[car.model_id] ?? 0) + 1;
-  }
-  const totalCount = (allCarRows ?? []).length;
-
-  // Public cars grouped by generation — flatten owner join for serialisability
-  type CarRow = {
-    slug: string;
-    year: number;
-    nickname: string | null;
-    cover_photo_path: string | null;
-    model_id: string;
-    owner: { username: string; display_name: string | null } | null;
-  };
-
-  const carsByGenId: Record<string, CommunityCar[]> = {};
-  for (const car of (publicCarRows ?? []) as unknown as CarRow[]) {
-    const mapped: CommunityCar = {
-      slug: car.slug,
-      year: car.year,
-      nickname: car.nickname,
-      cover_photo_path: car.cover_photo_path,
-      model_id: car.model_id,
-      ownerUsername: car.owner?.username ?? null,
-    };
-    if (!carsByGenId[car.model_id]) carsByGenId[car.model_id] = [];
-    carsByGenId[car.model_id].push(mapped);
+    totalCount++;
   }
 
-  // Initial tag keys for the client component
   const initialTagKeys = (userTagRows ?? []).map(
     (t) => `${t.model_id}:${t.tag_type}`
   );
 
-  // Group catalog gallery photos by generation id
-  const photosByGenId: Record<string, ModelPhoto[]> = {};
-  for (const photo of (modelPhotoRows ?? []) as { car_model_id: string; storage_path: string; position: number }[]) {
-    if (!photosByGenId[photo.car_model_id]) photosByGenId[photo.car_model_id] = [];
-    photosByGenId[photo.car_model_id].push({ storage_path: photo.storage_path, position: photo.position });
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const makeName = make?.name ?? "";
+  const makeLogoUrl = make?.logo_path
+    ? `${supabaseUrl}/storage/v1/object/public/catalog/${make.logo_path}`
+    : null;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-safe-page-8 pb-7 border-b border-ink/8">
-        {/* Make name — plain text, not a link yet (brand pages are a later step) */}
-        <p className="text-[0.52rem] uppercase tracking-[0.24em] font-bold text-hint mb-1.5 leading-none">
-          {makeName}
-        </p>
-
-        {/* Model name — big Archivo display title */}
+      {/* ── Header — centered ────────────────────────────────────────────────── */}
+      <div className="px-5 pt-safe-page-8 pb-7 border-b border-ink/8 text-center">
+        {/* Model name */}
         <h1 className="font-display font-extrabold text-[2.75rem] leading-none tracking-tight text-ink">
           {model.name}
         </h1>
 
-        {/* Model description — from catalog, optional */}
+        {/* Make breadcrumb — navigable link with logo */}
+        {make && (
+          <CatalogBreadcrumb
+            items={[
+              { label: makeName, href: `/make/${make.slug}`, logoUrl: makeLogoUrl },
+            ]}
+          />
+        )}
+
+        {/* Model description */}
         {(model as { description?: string | null }).description && (
-          <p className="text-sm text-ink-muted leading-relaxed mt-3">
+          <p className="text-sm text-ink-muted leading-relaxed mt-4 max-w-prose mx-auto text-left">
             {(model as { description?: string | null }).description}
           </p>
         )}
 
-        {/* Community car count — aggregate (public + own private) */}
+        {/* Community car count */}
         {totalCount > 0 && (
           <p className="text-[0.55rem] uppercase tracking-[0.18em] text-ink-muted mt-3 leading-none">
             {totalCount} {totalCount === 1 ? "car" : "cars"} in the community
@@ -220,16 +167,11 @@ export default async function ModelPage({
         )}
       </div>
 
-      {/* ── Generations list — client component for tag interactivity ────────── */}
+      {/* ── Generations list ─────────────────────────────────────────────────── */}
       <ModelGenerations
         generations={generations}
         initialTagKeys={initialTagKeys}
-        carsByGenId={carsByGenId}
         countByGenId={countByGenId}
-        photosByGenId={photosByGenId}
-        supabaseUrl={supabaseUrl}
-        makeName={makeName}
-        modelName={model.name}
         isLoggedIn={!!user}
       />
     </div>

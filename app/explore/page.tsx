@@ -21,7 +21,7 @@ const getMakes = unstable_cache(
     );
     const { data } = await supabase
       .from("makes")
-      .select("id, name, slug")
+      .select("id, name, slug, logo_path")
       .order("name");
     return data ?? [];
   },

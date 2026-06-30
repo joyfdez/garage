@@ -144,17 +144,15 @@ export default async function MakePage({
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-safe-page-8 pb-7 border-b border-ink/8">
-        {/* Brand logo — catalog bucket, progressive: slot stays reserved when null */}
-        {(make as { logo_path?: string | null }).logo_path ? (
+      <div className="px-5 pt-safe-page-8 pb-7 border-b border-ink/8 text-center">
+        {/* Brand logo — large, centered, progressive */}
+        {(make as { logo_path?: string | null }).logo_path && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`${supabaseUrl}/storage/v1/object/public/catalog/${(make as { logo_path?: string | null }).logo_path}`}
             alt={`${make.name} logo`}
-            className="h-12 w-auto object-contain mb-4"
+            className="h-20 w-auto object-contain mx-auto mb-5"
           />
-        ) : (
-          <div className="h-12 mb-4" aria-hidden="true" />
         )}
 
         {/* Brand name — editorial Archivo display title */}
