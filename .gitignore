@@ -29,3 +29,4 @@ next-env.d.ts
 supabase/.temp/
 backup_antes_fase3.sql
 *.sql
+!supabase/migrations/*.sql
