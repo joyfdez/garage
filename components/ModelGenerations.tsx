@@ -13,6 +13,13 @@ export interface Generation {
   year_end: number | null;
   engines: string[];
   slug: string;
+  description: string | null;
+  cover_photo_path: string | null;
+}
+
+export interface ModelPhoto {
+  storage_path: string;
+  position: number;
 }
 
 export interface CommunityCar {
@@ -29,6 +36,7 @@ interface ModelGenerationsProps {
   initialTagKeys: string[]; // serialisable: ["<gen_id>:driven", ...]
   carsByGenId: Record<string, CommunityCar[]>;
   countByGenId: Record<string, number>;
+  photosByGenId: Record<string, ModelPhoto[]>;
   supabaseUrl: string;
   makeName: string;
   modelName: string;
@@ -39,11 +47,37 @@ function yearLabel(start: number, end: number | null): string {
   return end ? `${start}–${end}` : `${start}–`;
 }
 
+function CarSilhouette() {
+  return (
+    <svg
+      width="40"
+      height="18"
+      viewBox="0 0 40 18"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* body */}
+      <path
+        d="M1 12 H6 V10 L10 5 H30 L34 10 V12 H39"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* front wheel */}
+      <circle cx="9" cy="13" r="3" stroke="currentColor" strokeWidth="1.2" />
+      {/* rear wheel */}
+      <circle cx="31" cy="13" r="3" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
 export function ModelGenerations({
   generations,
   initialTagKeys,
   carsByGenId,
   countByGenId,
+  photosByGenId,
   supabaseUrl,
   makeName,
   modelName,
@@ -97,11 +131,25 @@ export function ModelGenerations({
         const showChassis =
           gen.chassis_code && gen.chassis_code !== gen.generation;
 
+        const photos = photosByGenId[gen.id] ?? [];
+
         return (
           <section
             key={gen.id}
             className={`px-5 py-7 ${idx > 0 ? "border-t border-ink/8" : ""}`}
           >
+            {/* ── Cover photo hero — catalog image, progressive ─────────── */}
+            {gen.cover_photo_path && (
+              <div className="aspect-video rounded-xl overflow-hidden mb-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${supabaseUrl}/storage/v1/object/public/catalog/${gen.cover_photo_path}`}
+                  alt={gen.generation}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
             {/* ── Generation header ─────────────────────────────────────── */}
             <div className="flex items-start gap-4 justify-between mb-4">
               <div className="min-w-0">
@@ -174,6 +222,40 @@ export function ModelGenerations({
                     {engine}
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* ── Generation description — catalog text, progressive ────── */}
+            {gen.description && (
+              <p className="text-sm text-ink-muted leading-relaxed mb-5">
+                {gen.description}
+              </p>
+            )}
+
+            {/* ── Catalog gallery ───────────────────────────────────────── */}
+            {photos.length > 0 ? (
+              <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-5 px-5 mb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {photos.map((photo) => (
+                  <div
+                    key={photo.storage_path}
+                    className="shrink-0 w-[140px] aspect-[4/3] rounded-xl overflow-hidden bg-ink/[0.05]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`${supabaseUrl}/storage/v1/object/public/catalog/${photo.storage_path}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Single subtle empty state — one per generation, disappears when photos arrive */
+              <div className="flex items-center gap-2.5 mb-5 text-hint">
+                <CarSilhouette />
+                <span className="text-[0.55rem] uppercase tracking-[0.18em]">
+                  Photos coming soon
+                </span>
               </div>
             )}
 

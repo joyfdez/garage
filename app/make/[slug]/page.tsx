@@ -60,7 +60,7 @@ export default async function MakePage({
   // ── 1. Make ────────────────────────────────────────────────────────────────
   const { data: make } = await anon()
     .from("makes")
-    .select("id, name, slug")
+    .select("id, name, slug, logo_path")
     .eq("slug", slug)
     .single();
 
@@ -130,6 +130,8 @@ export default async function MakePage({
     }
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
   // Sort models by earliest generation year ASC, then name for ties
   const sortedModels = [...models].sort((a, b) => {
     const ay = minYearByModel[a.id] ?? 9999;
@@ -143,12 +145,17 @@ export default async function MakePage({
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="px-5 pt-safe-page-8 pb-7 border-b border-ink/8">
-        {/*
-         * Brand logo space — reserved for a future milestone.
-         * Dimensions: h-12 (48px). Drop an <img> or SVG here when ready.
-         * Keep aria-hidden so screen readers skip the empty container.
-         */}
-        <div className="h-12 mb-4" aria-hidden="true" />
+        {/* Brand logo — catalog bucket, progressive: slot stays reserved when null */}
+        {(make as { logo_path?: string | null }).logo_path ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`${supabaseUrl}/storage/v1/object/public/catalog/${(make as { logo_path?: string | null }).logo_path}`}
+            alt={`${make.name} logo`}
+            className="h-12 w-auto object-contain mb-4"
+          />
+        ) : (
+          <div className="h-12 mb-4" aria-hidden="true" />
+        )}
 
         {/* Brand name — editorial Archivo display title */}
         <h1 className="font-display font-extrabold text-[3rem] leading-none tracking-tight text-ink">

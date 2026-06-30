@@ -6,6 +6,7 @@ import {
   ModelGenerations,
   type Generation,
   type CommunityCar,
+  type ModelPhoto,
 } from "@/components/ModelGenerations";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -72,7 +73,7 @@ export default async function ModelPage({
   const anon = anonSupabase();
   const { data: model } = await anon
     .from("models")
-    .select("id, name, slug, make:makes(name, slug)")
+    .select("id, name, slug, description, make:makes(name, slug)")
     .eq("slug", slug)
     .single();
 
@@ -83,7 +84,7 @@ export default async function ModelPage({
   // ── 2. All generations for this model, ordered chronologically ─────────────
   const { data: rawGenerations } = await anon
     .from("car_models")
-    .select("id, generation, chassis_code, year_start, year_end, engines, slug")
+    .select("id, generation, chassis_code, year_start, year_end, engines, slug, description, cover_photo_path")
     .eq("model_ref_id", model.id)
     .order("year_start", { ascending: true });
 
@@ -97,12 +98,14 @@ export default async function ModelPage({
     year_end: g.year_end,
     engines: g.engines ?? [],
     slug: g.slug,
+    description: (g as { description?: string | null }).description ?? null,
+    cover_photo_path: (g as { cover_photo_path?: string | null }).cover_photo_path ?? null,
   }));
 
   const genIds = generations.map((g) => g.id);
 
   // ── 3. Parallel data fetches ───────────────────────────────────────────────
-  const [{ data: userTagRows }, { data: publicCarRows }, { data: allCarRows }] =
+  const [{ data: userTagRows }, { data: publicCarRows }, { data: allCarRows }, { data: modelPhotoRows }] =
     await Promise.all([
       // User's driven/wishlist tags for these generations
       user
@@ -127,6 +130,15 @@ export default async function ModelPage({
       // Aggregate counts: public + user's own private (what RLS allows).
       // Only id + model_id — no sensitive fields exposed.
       supabase.from("cars").select("id, model_id").in("model_id", genIds),
+
+      // Catalog gallery photos for all generations — one query, grouped in memory below.
+      genIds.length > 0
+        ? anon
+            .from("model_photos")
+            .select("car_model_id, storage_path, position")
+            .in("car_model_id", genIds)
+            .order("position")
+        : { data: [] as { car_model_id: string; storage_path: string; position: number }[] },
     ]);
 
   // ── 4. Build lookup maps ───────────────────────────────────────────────────
@@ -167,6 +179,13 @@ export default async function ModelPage({
     (t) => `${t.model_id}:${t.tag_type}`
   );
 
+  // Group catalog gallery photos by generation id
+  const photosByGenId: Record<string, ModelPhoto[]> = {};
+  for (const photo of (modelPhotoRows ?? []) as { car_model_id: string; storage_path: string; position: number }[]) {
+    if (!photosByGenId[photo.car_model_id]) photosByGenId[photo.car_model_id] = [];
+    photosByGenId[photo.car_model_id].push({ storage_path: photo.storage_path, position: photo.position });
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const makeName = make?.name ?? "";
 
@@ -186,6 +205,13 @@ export default async function ModelPage({
           {model.name}
         </h1>
 
+        {/* Model description — from catalog, optional */}
+        {(model as { description?: string | null }).description && (
+          <p className="text-sm text-ink-muted leading-relaxed mt-3">
+            {(model as { description?: string | null }).description}
+          </p>
+        )}
+
         {/* Community car count — aggregate (public + own private) */}
         {totalCount > 0 && (
           <p className="text-[0.55rem] uppercase tracking-[0.18em] text-ink-muted mt-3 leading-none">
@@ -200,6 +226,7 @@ export default async function ModelPage({
         initialTagKeys={initialTagKeys}
         carsByGenId={carsByGenId}
         countByGenId={countByGenId}
+        photosByGenId={photosByGenId}
         supabaseUrl={supabaseUrl}
         makeName={makeName}
         modelName={model.name}
