@@ -57,23 +57,21 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${archivo.variable}`}>
       <body className="bg-paper text-ink font-sans antialiased">
-        {/* Notch/status-bar gradient blur — single element, app-wide. Full
-            strength behind the OS status bar (clock/battery stay legible),
-            then blur + opacity fade smoothly to transparent below it so
-            scrolling content doesn't hard-clip at the status-bar edge. */}
+        {/* Notch/status-bar gradient blur — single element, app-wide. One
+            continuous fade: full blur + opacity at the very top edge,
+            smoothly down to transparent — no flat/solid segment, so it
+            never reads as two stacked layers. */}
         <div
           aria-hidden="true"
           className="fixed inset-x-0 top-0 z-[97] pointer-events-none"
           style={{
             height: "calc(env(safe-area-inset-top, 0px) + 3rem)",
             background:
-              "linear-gradient(to bottom, rgba(251,250,247,0.92) 0px, rgba(251,250,247,0.92) env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
+              "linear-gradient(to bottom, rgba(251,250,247,0.92) 0%, transparent 100%)",
             backdropFilter: "blur(20px) saturate(160%)",
             WebkitBackdropFilter: "blur(20px) saturate(160%)",
-            maskImage:
-              "linear-gradient(to bottom, black 0px, black env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, black 0px, black env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
+            maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
           }}
         />
         <main className="min-h-dvh pb-nav md:pb-0">{children}</main>
