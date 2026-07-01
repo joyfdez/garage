@@ -150,23 +150,32 @@ export function EditEventForm({
   const allPhotoCount = existingPhotos.length + newPhotos.length;
 
   return (
-    <div className="space-y-6 pb-24">
-    {/* ── Header with guarded back button ── */}
-    <div className="flex items-center gap-3">
+    <div className="space-y-6 pb-32">
+    {/* ── Sticky header with guarded back button ── */}
+    <div
+      className="sticky z-[58] -mx-4 px-4 py-3 flex items-center gap-3"
+      style={{
+        top: "env(safe-area-inset-top, 0px)",
+        background: "rgba(251,250,247,0.92)",
+        backdropFilter: "blur(20px) saturate(160%)",
+        WebkitBackdropFilter: "blur(20px) saturate(160%)",
+        borderBottom: "1px solid rgba(17,17,17,0.06)",
+      }}
+    >
       <button
         type="button"
         onClick={() => { if (confirmDiscard(isDirty)) router.push(backHref); }}
-        className="text-ink/40 hover:text-ink transition-colors"
+        className="text-ink/40 hover:text-ink transition-colors shrink-0"
       >
         <ArrowLeft size={20} />
       </button>
       <div>
-        <h1 className="font-display font-bold text-xl">{pageTitle}</h1>
+        <h1 className="font-display font-bold text-base leading-tight">{pageTitle}</h1>
         {pageSubtitle && <p className="text-ink/40 text-xs">{pageSubtitle}</p>}
       </div>
     </div>
 
-    <form action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
+    <form id="edit-event-form" action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
       <input type="hidden" name="event_id" value={event.id} />
       <input type="hidden" name="car_slug" value={carSlug} />
       <input type="hidden" name="type" value={type} />
@@ -394,17 +403,18 @@ export function EditEventForm({
       </div>
 
       {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
-
-      <div className="fixed bottom-16 inset-x-0 px-4 md:static md:bottom-auto md:px-0">
-        <button
-          type="submit"
-          disabled={pending || navigating || uploading}
-          className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
-        >
-          {pending || navigating ? "Saving…" : "Save changes"}
-        </button>
-      </div>
     </form>
+
+    <div className="save-bar">
+      <button
+        type="submit"
+        form="edit-event-form"
+        disabled={pending || navigating || uploading}
+        className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
+      >
+        {pending || navigating ? "Saving…" : "Save changes"}
+      </button>
+    </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Plus, Wrench, Gauge, Bookmark, ChevronRight } from "lucide-react";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 
 export const metadata: Metadata = { title: "Add — Garage" };
 
@@ -43,12 +44,11 @@ export default async function AddHubPage() {
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       <div className="px-5 pt-safe-page-8 pb-8">
-        <h1 className="font-display font-extrabold text-[2rem] leading-tight text-ink tracking-tight">
-          Add
-        </h1>
-        <p className="text-[0.6rem] uppercase tracking-[0.2em] font-bold text-hint mt-1.5">
-          What are you adding today?
-        </p>
+        <StickyPageHeader title="Add">
+          <p className="text-[0.6rem] uppercase tracking-[0.2em] font-bold text-hint mt-1.5">
+            What are you adding today?
+          </p>
+        </StickyPageHeader>
       </div>
 
       <div className="px-5 space-y-3">

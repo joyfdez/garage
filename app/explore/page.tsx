@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { createClient as createAnonClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { ExploreSearch } from "@/components/ExploreSearch";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 
 export const metadata: Metadata = {
   title: "Explore — Garage",
@@ -119,12 +120,11 @@ export default async function ExplorePage() {
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="px-5 pb-6 pt-safe-page-8">
-        <h1 className="font-display font-extrabold text-[2rem] leading-tight text-ink tracking-tight">
-          Explore
-        </h1>
-        <p className="text-[0.6rem] uppercase tracking-[0.2em] font-bold text-hint mt-1.5">
-          Browse makes&nbsp;&middot;&nbsp;models&nbsp;&middot;&nbsp;generations
-        </p>
+        <StickyPageHeader title="Explore">
+          <p className="text-[0.6rem] uppercase tracking-[0.2em] font-bold text-hint mt-1.5">
+            Browse makes&nbsp;&middot;&nbsp;models&nbsp;&middot;&nbsp;generations
+          </p>
+        </StickyPageHeader>
       </div>
 
       <ExploreSearch makes={makes} featuredModels={featuredModels} />

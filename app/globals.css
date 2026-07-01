@@ -19,6 +19,27 @@
     @apply bg-card rounded-xl px-3 py-3 text-base placeholder:text-ink/30 outline-none focus:ring-2 focus:ring-racing-green/20 transition-shadow;
   }
 
+  /* Fixed save button bar — sits above the bottom nav, collapses to static on md+ */
+  .save-bar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    z-index: 52;
+    padding: 0.5rem 1rem 0.75rem;
+    background: rgba(251, 250, 247, 0.95);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+  }
+  @media (min-width: 768px) {
+    .save-bar {
+      position: static;
+      padding: 0;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
   /* Glass surface — use ONLY over photography, never over flat backgrounds */
   .glass-bar {
     background: rgba(20, 19, 15, 0.52);

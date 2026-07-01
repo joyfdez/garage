@@ -339,7 +339,8 @@ export function AddCarForm({
   }
 
   return (
-    <form action={action} className="space-y-8 pb-24" onChange={() => setIsDirty(true)}>
+    <>
+    <form id="add-car-form" action={action} className="space-y-8 pb-24" onChange={() => setIsDirty(true)}>
       {/* ── Hidden fields ── */}
       <input type="hidden" name="model_id" value={selectedModel?.id ?? ""} />
       <input type="hidden" name="display_make" value={selectedModel?.make ?? ""} />
@@ -837,16 +838,20 @@ export function AddCarForm({
       </section>
 
       {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
-
-      <div className="fixed bottom-16 inset-x-0 px-4 md:static md:bottom-auto md:px-0">
-        <button
-          type="submit"
-          disabled={pending || navigating || uploading}
-          className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
-        >
-          {pending || navigating ? "Saving…" : "Add to garage"}
-        </button>
-      </div>
+      {/* Spacer so the last field can scroll above the fixed save bar on mobile */}
+      <div className="h-20 md:hidden" aria-hidden="true" />
     </form>
+
+    <div className="save-bar">
+      <button
+        type="submit"
+        form="add-car-form"
+        disabled={pending || navigating || uploading}
+        className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
+      >
+        {pending || navigating ? "Saving…" : "Add to garage"}
+      </button>
+    </div>
+    </>
   );
 }

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Which car? — Garage" };
@@ -136,15 +137,9 @@ export default async function CarUpdatePickerPage() {
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       <div className="px-5 pt-safe-page-8 pb-5">
-        <Link
-          href="/add"
-          className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition-colors mb-5"
-        >
-          <ArrowLeft size={13} />
-          Add
-        </Link>
-        <h1 className="font-display font-extrabold text-2xl text-ink">Which car?</h1>
-        <p className="text-ink-muted text-sm mt-1">Tap a car to log an update.</p>
+        <StickyPageHeader title="Which car?" back={{ href: "/add", label: "Add" }}>
+          <p className="text-ink-muted text-sm mt-1">Tap a car to log an update.</p>
+        </StickyPageHeader>
       </div>
 
       <div className="px-5">

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AddCarForm } from "@/components/AddCarForm";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 
 export default async function AddCarPage() {
   const supabase = await createClient();
@@ -20,7 +21,9 @@ export default async function AddCarPage() {
 
   return (
     <div className="px-4 pb-6 pt-safe-page max-w-lg">
-      <h1 className="font-display text-2xl font-bold mb-6">Add a car</h1>
+      <div className="mb-6">
+        <StickyPageHeader title="Add a car" />
+      </div>
       <AddCarForm userId={user.id} preferredUnit={preferredUnit} preferredCurrency={preferredCurrency} />
     </div>
   );

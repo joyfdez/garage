@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { QuickTagPicker } from "@/components/QuickTagPicker";
 import type { CarModel } from "@/components/BrowsePicker";
@@ -33,17 +32,11 @@ export default async function AddWishlistPage() {
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       <div className="px-5 pt-safe-page-8 pb-5">
-        <Link
-          href="/add"
-          className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition-colors mb-5"
-        >
-          <ArrowLeft size={13} />
-          Add
-        </Link>
-        <h1 className="font-display font-extrabold text-2xl text-ink">Add to wishlist</h1>
-        <p className="text-ink-muted text-sm mt-1">
-          Save cars you want to drive or own someday.
-        </p>
+        <StickyPageHeader title="Add to wishlist" back={{ href: "/add", label: "Add" }}>
+          <p className="text-ink-muted text-sm mt-1">
+            Save cars you want to drive or own someday.
+          </p>
+        </StickyPageHeader>
       </div>
 
       <QuickTagPicker tagType="wishlist" initialModels={wishlistModels} />

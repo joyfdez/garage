@@ -419,21 +419,30 @@ export function EditCarForm({
   const isPhotoBlocked = working || uploading;
 
   return (
-    <div className="space-y-10 pb-24">
-      {/* ── Header with guarded back button ── */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-10 pb-32">
+      {/* ── Sticky header with guarded back button ── */}
+      <div
+        className="sticky z-[58] -mx-4 px-4 py-3 flex items-center gap-3"
+        style={{
+          top: "env(safe-area-inset-top, 0px)",
+          background: "rgba(251,250,247,0.92)",
+          backdropFilter: "blur(20px) saturate(160%)",
+          WebkitBackdropFilter: "blur(20px) saturate(160%)",
+          borderBottom: "1px solid rgba(17,17,17,0.06)",
+        }}
+      >
         <button
           type="button"
           onClick={() => { if (confirmDiscard(isDirty)) router.push(backHref); }}
-          className="text-ink/40 hover:text-ink transition-colors"
+          className="text-ink/40 hover:text-ink transition-colors shrink-0"
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="font-display font-bold text-xl">Edit car</h1>
+        <h1 className="font-display font-bold text-base">Edit car</h1>
       </div>
 
       {/* ── Details form ── */}
-      <form action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
+      <form id="edit-car-form" action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
         <input type="hidden" name="car_id" value={car.id} />
 
         <section className="space-y-4">
@@ -860,15 +869,18 @@ export function EditCarForm({
         )}
 
         {state && "error" in state && <p className="text-sm text-red-500">{state.error}</p>}
+      </form>
 
+      <div className="save-bar">
         <button
           type="submit"
+          form="edit-car-form"
           disabled={pending || navigating}
           className="w-full bg-ink text-paper font-display font-bold py-4 rounded-2xl text-base hover:bg-ink/85 transition-colors disabled:opacity-50"
         >
           {pending || navigating ? "Saving…" : "Save changes"}
         </button>
-      </form>
+      </div>
 
       {/* ── Photos ── */}
       <section className="space-y-4">

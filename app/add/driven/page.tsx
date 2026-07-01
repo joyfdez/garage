@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
+import { StickyPageHeader } from "@/components/StickyPageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { QuickTagPicker } from "@/components/QuickTagPicker";
 import type { CarModel } from "@/components/BrowsePicker";
@@ -33,17 +32,11 @@ export default async function AddDrivenPage() {
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
       <div className="px-5 pt-safe-page-8 pb-5">
-        <Link
-          href="/add"
-          className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition-colors mb-5"
-        >
-          <ArrowLeft size={13} />
-          Add
-        </Link>
-        <h1 className="font-display font-extrabold text-2xl text-ink">Add driven car</h1>
-        <p className="text-ink-muted text-sm mt-1">
-          Mark models you&apos;ve driven or owned.
-        </p>
+        <StickyPageHeader title="Add driven car" back={{ href: "/add", label: "Add" }}>
+          <p className="text-ink-muted text-sm mt-1">
+            Mark models you&apos;ve driven or owned.
+          </p>
+        </StickyPageHeader>
       </div>
 
       <QuickTagPicker tagType="driven" initialModels={drivenModels} />

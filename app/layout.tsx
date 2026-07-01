@@ -57,16 +57,27 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${archivo.variable}`}>
       <body className="bg-paper text-ink font-sans antialiased">
-        {/* Frosted bar under the iOS notch/status-bar so scrolling content
-            doesn't visually collide with the native status bar. */}
+        {/* Solid frosted cover exactly over the iOS status-bar / notch */}
         <div
           aria-hidden="true"
-          className="fixed inset-x-0 top-0 z-[95] pointer-events-none"
+          className="fixed inset-x-0 top-0 z-[97] pointer-events-none"
           style={{
             height: "env(safe-area-inset-top, 0px)",
-            background: "rgba(251, 250, 247, 0.82)",
-            backdropFilter: "blur(16px) saturate(160%)",
-            WebkitBackdropFilter: "blur(16px) saturate(160%)",
+            background: "rgba(251, 250, 247, 0.92)",
+            backdropFilter: "blur(20px) saturate(160%)",
+            WebkitBackdropFilter: "blur(20px) saturate(160%)",
+          }}
+        />
+        {/* Gradient fade below the status bar — soft Instagram-style fade so
+            scrolling content doesn't hard-clip at the status-bar edge */}
+        <div
+          aria-hidden="true"
+          className="fixed inset-x-0 z-[55] pointer-events-none"
+          style={{
+            top: "env(safe-area-inset-top, 0px)",
+            height: "3rem",
+            background:
+              "linear-gradient(to bottom, rgba(251,250,247,0.80) 0%, transparent 100%)",
           }}
         />
         <main className="min-h-dvh pb-nav md:pb-0">{children}</main>
