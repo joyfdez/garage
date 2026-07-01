@@ -80,7 +80,7 @@ export default async function CarPage({
     .select(`
       id, slug, year, visibility, nickname, cover_photo_path,
       engine, transmission, color, location, current_owner_id,
-      fuel, drivetrain, horsepower, body_type, color_base,
+      fuel, drivetrain, horsepower, body_type, color_base, trim,
       model:car_models(make, model, generation, chassis_code),
       custom_make, custom_model, custom_generation,
       owner:profiles!current_owner_id(username, display_name, avatar_url)
@@ -242,6 +242,7 @@ export default async function CarPage({
 
   // Chips for structured car specs (only non-null values)
   const specChips = [
+    (car as { trim?: string | null }).trim ?? null,
     optLabel(FUEL_OPTIONS, car.fuel as string | null),
     optLabel(BODY_TYPE_OPTIONS, car.body_type as string | null),
     optLabel(DRIVETRAIN_OPTIONS, car.drivetrain as string | null),

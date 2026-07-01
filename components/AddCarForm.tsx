@@ -665,6 +665,11 @@ export function AddCarForm({
               <input name="color" placeholder="Dakar Yellow" className="input-field w-full" />
             </div>
           </div>
+
+          <div>
+            <label className="text-xs text-ink/50 mb-1 block">Trim / version</label>
+            <input name="trim" placeholder="Competition, Type S, GTI…" className="input-field w-full" />
+          </div>
         </div>
       </section>
 

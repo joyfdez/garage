@@ -18,7 +18,7 @@ export default async function EditCarPage({
     .from("cars")
     .select(`
       id, slug, year, visibility, nickname, cover_photo_path,
-      engine, transmission, color, color_base, location, current_owner_id, model_id,
+      engine, transmission, color, color_base, trim, location, current_owner_id, model_id,
       fuel, drivetrain, horsepower, body_type,
       custom_make, custom_model, custom_generation,
       model:car_models(id, make, model, generation, engines, chassis_code, year_start, year_end, slug)
@@ -99,6 +99,7 @@ export default async function EditCarPage({
     horsepower: (car as { horsepower?: number | null }).horsepower ?? null,
     body_type: (car as { body_type?: string | null }).body_type ?? null,
     color_base: (car as { color_base?: string | null }).color_base ?? null,
+    trim: (car as { trim?: string | null }).trim ?? null,
     ownershipId: activeOwnership?.id ?? null,
     purchaseDate: activeOwnership?.start_date ?? null,
     purchasePrice: (activeOwnership as { purchase_price?: number | null } | null)?.purchase_price ?? null,
