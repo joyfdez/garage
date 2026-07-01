@@ -33,7 +33,13 @@ interface CompactTitleBarProps {
   back?: { href: string };
 }
 
-/** Fixed compact bar pinned below the notch gradient — slides in once the large title leaves the viewport. */
+/**
+ * Fixed compact bar pinned below the notch gradient — slides in once the
+ * large title scrolls off-screen. The frosted backing continues the same
+ * continuous fade as the notch gradient (full at its own top, down to
+ * transparent) so the two read as one blurred surface, not a stacked block.
+ * The title itself sits on an unmasked layer on top so it stays crisp.
+ */
 export function CompactTitleBar({ title, compact, back }: CompactTitleBarProps) {
   return (
     <div
@@ -45,15 +51,20 @@ export function CompactTitleBar({ title, compact, back }: CompactTitleBarProps) 
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 -translate-y-1 pointer-events-none",
       ].join(" ")}
-      style={{
-        top: "env(safe-area-inset-top, 0px)",
-        background: "rgba(251,250,247,0.92)",
-        backdropFilter: "blur(20px) saturate(160%)",
-        WebkitBackdropFilter: "blur(20px) saturate(160%)",
-        borderBottom: "1px solid rgba(17,17,17,0.06)",
-      }}
+      style={{ top: "env(safe-area-inset-top, 0px)", height: "4rem" }}
     >
-      <div className="flex items-center gap-3 px-5 h-12">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(to bottom, rgba(251,250,247,0.92) 0%, transparent 100%)",
+          backdropFilter: "blur(20px) saturate(160%)",
+          WebkitBackdropFilter: "blur(20px) saturate(160%)",
+          maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+        }}
+      />
+      <div className="relative flex items-center gap-3 px-5 h-12">
         {back && (
           <Link
             href={back.href}
