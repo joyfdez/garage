@@ -57,27 +57,23 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${archivo.variable}`}>
       <body className="bg-paper text-ink font-sans antialiased">
-        {/* Solid frosted cover exactly over the iOS status-bar / notch */}
+        {/* Notch/status-bar gradient blur — single element, app-wide. Full
+            strength behind the OS status bar (clock/battery stay legible),
+            then blur + opacity fade smoothly to transparent below it so
+            scrolling content doesn't hard-clip at the status-bar edge. */}
         <div
           aria-hidden="true"
           className="fixed inset-x-0 top-0 z-[97] pointer-events-none"
           style={{
-            height: "env(safe-area-inset-top, 0px)",
-            background: "rgba(251, 250, 247, 0.92)",
+            height: "calc(env(safe-area-inset-top, 0px) + 3rem)",
+            background:
+              "linear-gradient(to bottom, rgba(251,250,247,0.92) 0px, rgba(251,250,247,0.92) env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
             backdropFilter: "blur(20px) saturate(160%)",
             WebkitBackdropFilter: "blur(20px) saturate(160%)",
-          }}
-        />
-        {/* Gradient fade below the status bar — soft Instagram-style fade so
-            scrolling content doesn't hard-clip at the status-bar edge */}
-        <div
-          aria-hidden="true"
-          className="fixed inset-x-0 z-[55] pointer-events-none"
-          style={{
-            top: "env(safe-area-inset-top, 0px)",
-            height: "3rem",
-            background:
-              "linear-gradient(to bottom, rgba(251,250,247,0.80) 0%, transparent 100%)",
+            maskImage:
+              "linear-gradient(to bottom, black 0px, black env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 0px, black env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 3rem))",
           }}
         />
         <main className="min-h-dvh pb-nav md:pb-0">{children}</main>

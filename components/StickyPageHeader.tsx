@@ -4,6 +4,73 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+/**
+ * Tracks whether a title element has scrolled out of the viewport, so a
+ * compact pinned header can take over. Shared by StickyPageHeader and any
+ * screen with a non-standard large-title layout (e.g. ProfileShell).
+ */
+export function useTitleCollapse<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setCompact(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return { ref, compact };
+}
+
+interface CompactTitleBarProps {
+  title: string;
+  compact: boolean;
+  back?: { href: string };
+}
+
+/** Fixed compact bar pinned below the notch gradient — slides in once the large title leaves the viewport. */
+export function CompactTitleBar({ title, compact, back }: CompactTitleBarProps) {
+  return (
+    <div
+      aria-hidden={!compact}
+      className={[
+        "fixed inset-x-0 z-[60]",
+        "motion-safe:transition-[opacity,transform] motion-safe:duration-200",
+        compact
+          ? "opacity-100 translate-y-0 pointer-events-auto"
+          : "opacity-0 -translate-y-1 pointer-events-none",
+      ].join(" ")}
+      style={{
+        top: "env(safe-area-inset-top, 0px)",
+        background: "rgba(251,250,247,0.92)",
+        backdropFilter: "blur(20px) saturate(160%)",
+        WebkitBackdropFilter: "blur(20px) saturate(160%)",
+        borderBottom: "1px solid rgba(17,17,17,0.06)",
+      }}
+    >
+      <div className="flex items-center gap-3 px-5 h-12">
+        {back && (
+          <Link
+            href={back.href}
+            className="text-ink/40 hover:text-ink transition-colors shrink-0"
+            aria-label="Go back"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+        )}
+        <span className="font-display font-bold text-base text-ink truncate">
+          {title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   title: string;
   back?: { href: string; label?: string };
@@ -21,19 +88,7 @@ interface Props {
  * so it doesn't affect layout.
  */
 export function StickyPageHeader({ title, back, children }: Props) {
-  const h1Ref = useRef<HTMLHeadingElement>(null);
-  const [compact, setCompact] = useState(false);
-
-  useEffect(() => {
-    const el = h1Ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setCompact(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+  const { ref, compact } = useTitleCollapse<HTMLHeadingElement>();
 
   return (
     <>
@@ -50,7 +105,7 @@ export function StickyPageHeader({ title, back, children }: Props) {
 
       {/* Large title */}
       <h1
-        ref={h1Ref}
+        ref={ref}
         className="font-display font-extrabold text-[2rem] leading-tight text-ink tracking-tight"
       >
         {title}
@@ -60,38 +115,11 @@ export function StickyPageHeader({ title, back, children }: Props) {
       {children}
 
       {/* Compact fixed bar — appears once h1 leaves viewport */}
-      <div
-        aria-hidden={!compact}
-        className={[
-          "fixed inset-x-0 z-[60]",
-          "motion-safe:transition-[opacity,transform] motion-safe:duration-200",
-          compact
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 -translate-y-1 pointer-events-none",
-        ].join(" ")}
-        style={{
-          top: "env(safe-area-inset-top, 0px)",
-          background: "rgba(251,250,247,0.92)",
-          backdropFilter: "blur(20px) saturate(160%)",
-          WebkitBackdropFilter: "blur(20px) saturate(160%)",
-          borderBottom: "1px solid rgba(17,17,17,0.06)",
-        }}
-      >
-        <div className="flex items-center gap-3 px-5 h-12">
-          {back && (
-            <Link
-              href={back.href}
-              className="text-ink/40 hover:text-ink transition-colors shrink-0"
-              aria-label="Go back"
-            >
-              <ArrowLeft size={20} />
-            </Link>
-          )}
-          <span className="font-display font-bold text-base text-ink truncate">
-            {title}
-          </span>
-        </div>
-      </div>
+      <CompactTitleBar
+        title={title}
+        compact={compact}
+        back={back ? { href: back.href } : undefined}
+      />
     </>
   );
 }

@@ -20,6 +20,7 @@ import { ModelCard } from "@/components/ModelCard";
 import { toggleModelTag, TagType } from "@/lib/actions/modelTags";
 import { toast } from "@/lib/toast";
 import { FollowButton } from "@/components/FollowButton";
+import { useTitleCollapse, CompactTitleBar } from "@/components/StickyPageHeader";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -305,6 +306,9 @@ export function ProfileShell({
   const [liveFollowerCount, setLiveFollowerCount] = useState(followerCount);
   const [shareCopied, setShareCopied] = useState(false);
 
+  const { ref: nameRef, compact } = useTitleCollapse<HTMLHeadingElement>();
+  const displayTitle = displayName ?? `@${username}`;
+
   async function handleShareProfile() {
     const url = `${window.location.origin}/u/${username}`;
     const title = `${displayName ?? "@" + username} on Garage`;
@@ -371,6 +375,7 @@ export function ProfileShell({
 
   return (
     <div className="bg-paper min-h-dvh pb-24 page-enter">
+      <CompactTitleBar title={displayTitle} compact={compact} />
 
       {/* ── Cover ── */}
       {coverUrl ? (
@@ -439,8 +444,8 @@ export function ProfileShell({
           </div>
         </div>
 
-        <h1 className="font-display font-extrabold text-xl leading-tight text-ink">
-          {displayName ?? `@${username}`}
+        <h1 ref={nameRef} className="font-display font-extrabold text-xl leading-tight text-ink">
+          {displayTitle}
         </h1>
         <p className="text-hint text-sm mb-1">@{username}</p>
 
