@@ -90,6 +90,7 @@ export function EditEventForm({
     if (!state) return;
     if ("carSlug" in state) {
       setNavigating(true);
+      state.warnings?.forEach((w) => toast.warning(w));
       toast.success("Event updated");
       router.push(`/car/${state.carSlug}/events/${state.eventId}`);
     } else if ("error" in state) {

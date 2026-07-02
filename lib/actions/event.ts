@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type EventState = { error: string } | { carSlug: string; eventId: string } | null;
+export type EventState =
+  | { error: string }
+  | { carSlug: string; eventId: string; warnings?: string[] }
+  | null;
 export type DeleteEventState = { error: string } | { carSlug: string } | null;
 
 export async function createEvent(
@@ -95,8 +98,9 @@ export async function createEvent(
     extraPaths.push(p);
   }
   const allPaths = [coverPhotoPath, ...extraPaths].filter(Boolean) as string[];
+  const warnings: string[] = [];
   if (allPaths.length > 0) {
-    await supabase.from("photos").insert(
+    const { error: photoError } = await supabase.from("photos").insert(
       allPaths.map((storage_path, position) => ({
         car_id: car.id,
         event_id: event.id,
@@ -104,10 +108,15 @@ export async function createEvent(
         position,
       }))
     );
+    if (photoError) {
+      warnings.push("Photos couldn't be saved — add them from the event page.");
+    }
   }
 
   revalidatePath(`/car/${car.slug}`);
-  return { carSlug: car.slug, eventId: event.id };
+  return warnings.length > 0
+    ? { carSlug: car.slug, eventId: event.id, warnings }
+    : { carSlug: car.slug, eventId: event.id };
 }
 
 export async function updateEvent(
@@ -193,6 +202,7 @@ export async function updateEvent(
     if (!p) break;
     newPaths.push(p);
   }
+  const warnings: string[] = [];
   if (newPaths.length > 0) {
     const { data: lastPhoto } = await supabase
       .from("photos")
@@ -202,7 +212,7 @@ export async function updateEvent(
       .limit(1)
       .maybeSingle();
     const startPos = (lastPhoto?.position ?? -1) + 1;
-    await supabase.from("photos").insert(
+    const { error: photoError } = await supabase.from("photos").insert(
       newPaths.map((storage_path, i) => ({
         car_id: event.car_id,
         event_id: eventId,
@@ -210,11 +220,14 @@ export async function updateEvent(
         position: startPos + i,
       }))
     );
+    if (photoError) {
+      warnings.push("New photos couldn't be saved — try adding them again.");
+    }
   }
 
   revalidatePath(`/car/${carSlug}`);
   revalidatePath(`/car/${carSlug}/events/${eventId}`);
-  return { carSlug, eventId };
+  return warnings.length > 0 ? { carSlug, eventId, warnings } : { carSlug, eventId };
 }
 
 export async function deleteEvent(eventId: string): Promise<DeleteEventState> {
@@ -239,15 +252,15 @@ export async function deleteEvent(eventId: string): Promise<DeleteEventState> {
     .select("storage_path")
     .eq("event_id", eventId);
 
-  // Delete from storage (best effort)
+  // Delete event (cascades photos rows)
+  const { error } = await supabase.from("car_events").delete().eq("id", eventId);
+  if (error) return { error: "Failed to delete event. Please try again." };
+
+  // Clean up storage (best effort — don't block on errors)
   const paths = (photos ?? []).map((p) => p.storage_path);
   if (paths.length > 0) {
     await supabase.storage.from("car-photos").remove(paths);
   }
-
-  // Delete event (cascades photos rows)
-  const { error } = await supabase.from("car_events").delete().eq("id", eventId);
-  if (error) return { error: "Failed to delete event. Please try again." };
 
   revalidatePath(`/car/${car.slug}`);
   return { carSlug: car.slug };

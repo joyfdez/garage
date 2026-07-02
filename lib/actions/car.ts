@@ -239,6 +239,7 @@ export async function updateCar(
   }
 
   // Also update ownership purchase fields if an ownership_id was submitted
+  const warnings: string[] = [];
   const ownershipId = (formData.get("ownership_id") as string)?.trim() || null;
   if (ownershipId) {
     const purchaseDate = (formData.get("purchase_date") as string)?.trim() || null;
@@ -250,7 +251,7 @@ export async function updateCar(
     const purchaseMileageUnit = (formData.get("purchase_mileage_unit") as string)?.trim() || "km";
     const currency = (formData.get("currency") as string)?.trim() || null;
 
-    await supabase
+    const { error: ownershipError } = await supabase
       .from("ownerships")
       .update({
         start_date: purchaseDate,
@@ -262,11 +263,15 @@ export async function updateCar(
       })
       .eq("id", ownershipId)
       .eq("user_id", user.id);
+
+    if (ownershipError) {
+      warnings.push("Purchase details couldn't be saved — try editing them again.");
+    }
   }
 
   revalidatePath(`/car/${existing.slug}`);
   revalidatePath("/garage");
-  return { slug: existing.slug };
+  return warnings.length > 0 ? { slug: existing.slug, warnings } : { slug: existing.slug };
 }
 
 export async function setCarCover(
@@ -316,10 +321,11 @@ export async function deleteCarPhoto(
 
   if (!car) return "Car not found";
 
-  await supabase.storage.from("car-photos").remove([storagePath]);
-
   const { error } = await supabase.from("photos").delete().eq("id", photoId);
   if (error) return "Failed to delete photo";
+
+  // Clean up storage (best effort — don't block on errors)
+  await supabase.storage.from("car-photos").remove([storagePath]);
 
   if (car.cover_photo_path === storagePath) {
     await supabase.from("cars").update({ cover_photo_path: null }).eq("id", carId);

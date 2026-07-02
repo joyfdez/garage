@@ -27,10 +27,16 @@ export function BrowsePicker({
   disabled: boolean;
 }) {
   const [makes, setMakes]       = useState<string[]>([]);
+  const [makesError, setMakesError] = useState(false);
+  const [makesRetry, setMakesRetry] = useState(0);
   const [make, setMake]         = useState("");
   const [models, setModels]     = useState<string[]>([]);
+  const [modelsError, setModelsError] = useState(false);
+  const [modelsRetry, setModelsRetry] = useState(0);
   const [model, setModel]       = useState("");
   const [generations, setGens]  = useState<CarModel[] | null>(null);
+  const [gensError, setGensError] = useState(false);
+  const [gensRetry, setGensRetry] = useState(0);
   const [fetching, setFetching] = useState(false);
   const [pickedIdx, setPickedIdx] = useState(0);
 
@@ -39,38 +45,41 @@ export function BrowsePicker({
   onSelectRef.current = onSelect;
 
   useEffect(() => {
+    setMakesError(false);
     fetch("/api/car-models/makes")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setMakes)
-      .catch(() => {});
-  }, []);
+      .catch(() => setMakesError(true));
+  }, [makesRetry]);
 
   useEffect(() => {
     setModel("");
     setGens(null);
+    setModelsError(false);
     if (!make) { setModels([]); return; }
     fetch(`/api/car-models/models?make=${encodeURIComponent(make)}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setModels)
-      .catch(() => {});
-  }, [make]);
+      .catch(() => setModelsError(true));
+  }, [make, modelsRetry]);
 
   useEffect(() => {
     setGens(null);
+    setGensError(false);
     setPickedIdx(0);
     if (!make || !model) return;
     setFetching(true);
     fetch(
       `/api/car-models/generations?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`
     )
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: CarModel[]) => {
         setGens(data);
         if (data.length === 1) onSelectRef.current(data[0]);
       })
-      .catch(() => setGens([]))
+      .catch(() => setGensError(true))
       .finally(() => setFetching(false));
-  }, [make, model]);
+  }, [make, model, gensRetry]);
 
   return (
     <div className={`space-y-3 transition-opacity ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
@@ -90,6 +99,15 @@ export function BrowsePicker({
           </select>
           <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
         </div>
+        {makesError && (
+          <button
+            type="button"
+            onClick={() => setMakesRetry((n) => n + 1)}
+            className="text-xs text-red-400 underline mt-1"
+          >
+            Couldn&apos;t load makes — tap to retry
+          </button>
+        )}
       </div>
 
       {/* Model */}
@@ -109,6 +127,15 @@ export function BrowsePicker({
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
           </div>
+          {modelsError && (
+            <button
+              type="button"
+              onClick={() => setModelsRetry((n) => n + 1)}
+              className="text-xs text-red-400 underline mt-1"
+            >
+              Couldn&apos;t load models — tap to retry
+            </button>
+          )}
         </div>
       )}
 
@@ -119,19 +146,29 @@ export function BrowsePicker({
             <p className="text-xs text-ink/40">Loading generations…</p>
           )}
 
-          {!fetching && generations !== null && generations.length === 0 && (
+          {!fetching && gensError && (
+            <button
+              type="button"
+              onClick={() => setGensRetry((n) => n + 1)}
+              className="text-xs text-red-400 underline"
+            >
+              Couldn&apos;t load generations — tap to retry
+            </button>
+          )}
+
+          {!fetching && !gensError && generations !== null && generations.length === 0 && (
             <p className="text-xs text-red-400">
               No catalog entries found for {make} {model}.
             </p>
           )}
 
-          {!fetching && generations !== null && generations.length === 1 && (
+          {!fetching && !gensError && generations !== null && generations.length === 1 && (
             <p className="text-xs text-ink/40">
               {generations[0].generation} · {yearLabel(generations[0])}
             </p>
           )}
 
-          {!fetching && generations !== null && generations.length > 1 && (
+          {!fetching && !gensError && generations !== null && generations.length > 1 && (
             <div>
               <p className="text-xs text-ink/50 mb-2">Pick your generation:</p>
               <div className="space-y-1.5">

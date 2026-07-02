@@ -36,11 +36,17 @@ function CascadePicker({
   onResolve: (model: CarModel, year: string) => void;
 }) {
   const [makes, setMakes]             = useState<string[]>([]);
+  const [makesError, setMakesError]   = useState(false);
+  const [makesRetry, setMakesRetry]   = useState(0);
   const [cMake, setCMake]             = useState("");
   const [cModels, setCModels]         = useState<string[]>([]);
+  const [modelsError, setModelsError] = useState(false);
+  const [modelsRetry, setModelsRetry] = useState(0);
   const [loadingModels, setLoadingModels] = useState(false);
   const [cModel, setCModel]           = useState("");
   const [generations, setGens]        = useState<CarModel[] | null>(null);
+  const [gensError, setGensError]     = useState(false);
+  const [gensRetry, setGensRetry]     = useState(0);
   const [fetching, setFetching]       = useState(false);
   const [pickIdx, setPickIdx]         = useState(0);
 
@@ -49,40 +55,46 @@ function CascadePicker({
   onResolveRef.current = onResolve;
 
   useEffect(() => {
-    fetch("/api/car-models/makes").then((r) => r.json()).then(setMakes).catch(() => {});
-  }, []);
+    setMakesError(false);
+    fetch("/api/car-models/makes")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setMakes)
+      .catch(() => setMakesError(true));
+  }, [makesRetry]);
 
   useEffect(() => {
     setCModel("");
     setCModels([]);
     setGens(null);
+    setModelsError(false);
     if (!cMake) { setLoadingModels(false); return; }
     setLoadingModels(true);
     fetch(`/api/car-models/models?make=${encodeURIComponent(cMake)}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setCModels)
-      .catch(() => {})
+      .catch(() => setModelsError(true))
       .finally(() => setLoadingModels(false));
-  }, [cMake]);
+  }, [cMake, modelsRetry]);
 
   useEffect(() => {
     setGens(null);
+    setGensError(false);
     setPickIdx(0);
     if (!cMake || !cModel) return;
     setFetching(true);
     fetch(
       `/api/car-models/generations?make=${encodeURIComponent(cMake)}&model=${encodeURIComponent(cModel)}`
     )
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: CarModel[]) => {
         setGens(data);
         if (data.length === 1) {
           onResolveRef.current(data[0], String(data[0].year_start));
         }
       })
-      .catch(() => setGens([]))
+      .catch(() => setGensError(true))
       .finally(() => setFetching(false));
-  }, [cMake, cModel]);
+  }, [cMake, cModel, gensRetry]);
 
   return (
     <div className="space-y-3">
@@ -100,6 +112,15 @@ function CascadePicker({
           </select>
           <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
         </div>
+        {makesError && (
+          <button
+            type="button"
+            onClick={() => setMakesRetry((n) => n + 1)}
+            className="text-xs text-red-400 underline mt-1"
+          >
+            Couldn&apos;t load makes — tap to retry
+          </button>
+        )}
       </div>
 
       {/* Step 2 — Model */}
@@ -124,6 +145,15 @@ function CascadePicker({
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
           </div>
+          {modelsError && (
+            <button
+              type="button"
+              onClick={() => setModelsRetry((n) => n + 1)}
+              className="text-xs text-red-400 underline mt-1"
+            >
+              Couldn&apos;t load models — tap to retry
+            </button>
+          )}
         </div>
       )}
 
@@ -134,13 +164,23 @@ function CascadePicker({
             <p className="text-xs text-ink/40">Loading generations…</p>
           )}
 
-          {!fetching && generations !== null && generations.length === 0 && (
+          {!fetching && gensError && (
+            <button
+              type="button"
+              onClick={() => setGensRetry((n) => n + 1)}
+              className="text-xs text-red-400 underline"
+            >
+              Couldn&apos;t load generations — tap to retry
+            </button>
+          )}
+
+          {!fetching && !gensError && generations !== null && generations.length === 0 && (
             <p className="text-xs text-red-400">
               {cMake} {cModel} isn&apos;t in the catalog. Use &ldquo;Add it manually&rdquo; below.
             </p>
           )}
 
-          {!fetching && generations !== null && generations.length > 1 && (
+          {!fetching && !gensError && generations !== null && generations.length > 1 && (
             <div>
               <p className="text-xs text-ink/50 mb-2">Pick your generation:</p>
               <div className="space-y-1.5">
